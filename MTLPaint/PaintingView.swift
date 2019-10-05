@@ -392,14 +392,32 @@ class PaintingView: UIView {
 
        
         vertexBuffer.reserveCapacity(_points.count * 2)
+        
+        var newCount = _points.count
 
-        for i in 0 ..< _points.count {
-
+        for i in 0 ..< _points.count - 1 {
+            
+            let p0 = _points[i]
+            let p1 = _points[i+1]
+            
             vertexBuffer.append(_points[i].x.f)
             vertexBuffer.append(_points[i].y.f)
+            
+            // MARK: - Add points to the buffer so there are drawing points every X pixels
+            let count = max(Int(ceilf(sqrtf((p1.x - p0.x).f * (p1.x - p0.x).f + (p1.y - p0.y).f * (p1.y - p0.y).f) / kBrushPixelStep.f)), 1)
+            newCount += count
+            
+            for i in 0 ..< count {
+
+                vertexBuffer.append(p0.x.f + (p1.x - p0.x).f * (i.f / count.f))
+                vertexBuffer.append(p0.y.f + (p1.y - p0.y).f * (i.f / count.f))
+            }
+
+            vertexBuffer.append(_points[i+1].x.f)
+            vertexBuffer.append(_points[i+1].y.f)
         }
         
-        vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * _points.count * 2, options: [])
+        vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * newCount * 2, options: [])
 
         drawInNextDrawable(loadAction: .load) { encoder in
 
@@ -422,7 +440,7 @@ class PaintingView: UIView {
             encoder.setViewport(viewport)
             
             /// Drawcall
-            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: _points.count)
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
         }
     }
     
@@ -516,11 +534,13 @@ class PaintingView: UIView {
 //            previousLocation.y = bounds.size.height - previousLocation.y
 //            self.renderLine(from: previousLocation, to: location)
 //        }
+        
         points.removeAll(keepingCapacity: true)
     }
 
     // Handles the end of a touch event.
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        
         // If appropriate, add code necessary to save the state of the application.
         // This application is not saving state.
         points.removeAll(keepingCapacity: true)
@@ -540,10 +560,6 @@ class PaintingView: UIView {
         }
     }
 
-    override var canBecomeFirstResponder : Bool {
-        return true
-    }
-
     private func createRenderTargetTexture(from texture: MTLTexture) -> MTLTexture {
         
         let textureDescriptor = MTLTextureDescriptor()
@@ -556,5 +572,9 @@ class PaintingView: UIView {
         
         let sampleTexture = metalDevice.makeTexture(descriptor: textureDescriptor)
         return sampleTexture!
+    }
+    
+    override var canBecomeFirstResponder : Bool {
+        return true
     }
 }
