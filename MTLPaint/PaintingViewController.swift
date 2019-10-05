@@ -11,16 +11,16 @@ import MetalKit
 
 //CONSTANTS:
 
-let kBrightness =       1.0
-let kSaturation =       0.45
+let kBrightness = 1.0
+let kSaturation = 0.45
 
-let kPaletteHeight =    30
-let kPaletteSize =      5
+let kPaletteHeight = 30
+let kPaletteSize = 5
 let kMinEraseInterval = 0.5
 
 // Padding for margins
-let kLeftMargin =   10.0
-let kTopMargin =    10.0
+let kLeftMargin =  10.0
+let kTopMargin = 10.0
 let kRightMargin =  10.0
 
 extension Notification.Name {
@@ -133,7 +133,7 @@ class PaintingViewController: UIViewController {
         return false
     }
 
-    //MARK: Motion
+    // MARK: - Motion
 
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         if motion == UIEvent.EventSubtype.motionShake {
