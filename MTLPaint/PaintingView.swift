@@ -14,14 +14,14 @@ enum LoadAction {
     case clear(red: Double, green: Double, blue: Double, alpha: Double)
 }
 
-//CONSTANTS:
+// MARK: - CONSTANTS:
 
 let kBrushOpacity = (1.0 / 3.0)
 let kBrushPixelStep = 3
 let kBrushScale = 2
 
 
-// Shaders
+// MARK: - Shaders
 let PROGRAM_POINT = 0
 
 let UNIFORM_MVP = 0
@@ -72,13 +72,16 @@ class PaintingView: UIView {
     private var firstTouch: Bool = false
     private var needsErase: Bool = false
 
-    // View port
+    // Viewport
     private var viewport: MTLViewport!
 
     private var initialized: Bool = false
 
     var location: CGPoint = CGPoint()
     var previousLocation: CGPoint = CGPoint()
+    
+    var points: [CGPoint] = []
+    var vertBuffer: MTLBuffer? = nil
 
     // Implement this to override the default layer class (which is [CALayer class]).
     // We do this so that our view will be backed by a layer that is capable of OpenGL ES rendering.
@@ -123,10 +126,8 @@ class PaintingView: UIView {
     override func layoutSubviews() {
 
         if !initialized {
-            //initialized = self.initGL()
             initialized = initMetal()
         } else {
-            //self.resize(from: self.layer as! CAEAGLLayer)
             self.resize(from: self.layer as! CAMetalLayer)
         }
 
@@ -138,19 +139,19 @@ class PaintingView: UIView {
     }
 
     private func setupShaders() {
+        
         let defaultLibrary = metalDevice.makeDefaultLibrary()!
-        for i in 0..<NUM_PROGRAMS {
-            //let vsrc = readData(forResource: program[i].vert)
+        
+        for i in 0 ..< NUM_PROGRAMS {
+            
             let vertexProgram = defaultLibrary.makeFunction(name: program[i].vert)!
-            //let fsrc = readData(forResource: program[i].frag)
             let fragmentProgram = defaultLibrary.makeFunction(name: program[i].frag)!
 
-            //program[i].id = prog
             let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
             pipelineStateDescriptor.vertexFunction = vertexProgram
             pipelineStateDescriptor.fragmentFunction = fragmentProgram
             pipelineStateDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-            //### Blending setups
+
             // Enable blending and set a blending function appropriate for premultiplied alpha pixel data
             pipelineStateDescriptor.colorAttachments[0].isBlendingEnabled = true
             pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = .add
@@ -168,11 +169,8 @@ class PaintingView: UIView {
 
                 // viewing matrices
                 print(backingWidth, backingHeight)
-                //let projectionMatrix = GLKMatrix4MakeOrtho(0, backingWidth.f, 0, backingHeight.f, -1, 1)
                 let projectionMatrix = float4x4.orthoLeftHand(0, backingWidth.f, 0, backingHeight.f, -1, 1)
-                //let modelViewMatrix = GLKMatrix4Identity
                 let modelViewMatrix = float4x4.identity
-                //var MVPMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix)
                 var MVPMatrix = projectionMatrix * modelViewMatrix
 
                 let uniformMVP = metalDevice.makeBuffer(bytes: &MVPMatrix, length: MemoryLayout<float4x4>.size)
@@ -287,15 +285,14 @@ class PaintingView: UIView {
         guard let drawable = (self.layer as! CAMetalLayer).nextDrawable() else {
             return
         }
-        //### [kEAGLDrawablePropertyRetainedBacking]
+
         if renderTargetTexture == nil {
             renderTargetTexture = createRenderTargetTexture(from: drawable.texture)
         }
         
         let renderPassDescriptor = MTLRenderPassDescriptor()
         let attachment = renderPassDescriptor.colorAttachments[0]!
-        
-        //### First draw to the offline render target
+
         attachment.texture = self.renderTargetTexture
         switch loadAction {
             
@@ -313,8 +310,7 @@ class PaintingView: UIView {
             return
         }
         
-        guard let renderEncoder = commandBuffer
-            .makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
+        guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else {
                 return
         }
 
@@ -343,49 +339,102 @@ class PaintingView: UIView {
     // Drawings a line onscreen based on where the user touches
     private func renderLine(from _start: CGPoint, to _end: CGPoint) {
 
-        // Convert locations from Points to Pixels
-        let scale = self.contentScaleFactor
-        var start = _start
+        // MARK: - Convert locations from Points to Pixels
+        let scale: CGFloat = self.contentScaleFactor
+        var start: CGPoint = _start
         start.x *= scale
         start.y *= scale
-        var end = _end
+        var end: CGPoint = _end
         end.x *= scale
         end.y *= scale
 
-        // Allocate vertex array buffer
-        //### No need to make this array static
+        // MARK: - Allocate vertex array buffer
         var vertexBuffer: [Float] = []
 
-        // Add points to the buffer so there are drawing points every X pixels
+        // MARK: - Add points to the buffer so there are drawing points every X pixels
         let count = max(Int(ceilf(sqrtf((end.x - start.x).f * (end.x - start.x).f + (end.y - start.y).f * (end.y - start.y).f) / kBrushPixelStep.f)), 1)
 
         vertexBuffer.reserveCapacity(count * 2)
 
-        for i in 0..<count {
+        for i in 0 ..< count {
 
             vertexBuffer.append(start.x.f + (end.x - start.x).f * (i.f / count.f))
             vertexBuffer.append(start.y.f + (end.y - start.y).f * (i.f / count.f))
         }
 
         drawInNextDrawable(loadAction: .load) {encoder in
-            
-        // MARK: - Load data to the Vertex Buffer Object
 
-            encoder.setVertexBytes(vertexBuffer, length: count*2*MemoryLayout<Float>.size, index: 0)
-
-        // MARK: - Draw
+            // MARK: - Draw
 
             encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+            
+            /// Bind vertex buffers
+            encoder.setVertexBytes(vertexBuffer, length: count * 2 * MemoryLayout<Float>.size, index: 0)
             encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
             encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
             encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+            
+            /// Bind fragment buffers
             encoder.setFragmentTexture(brushTexture.texture, index: 0)
             encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+            
+            /// Set viewport
             encoder.setViewport(viewport)
+            
+            /// Drawcall
             encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: count)
         }
     }
 
+    private func renderLine(points: [CGPoint]) {
+        
+         var _points = points
+
+        for i in 0 ..< points.count {
+            
+            _points[i].x = points[i].x * self.contentScaleFactor
+            _points[i].y = points[i].y * self.contentScaleFactor
+        }
+
+        // MARK: - Allocate vertex array buffer
+        var vertexBuffer: [Float] = []
+
+       
+        vertexBuffer.reserveCapacity(_points.count * 2)
+
+        for i in 0 ..< _points.count {
+
+            vertexBuffer.append(_points[i].x.f)
+            vertexBuffer.append(_points[i].y.f)
+        }
+        
+        vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * _points.count * 2, options: [])
+
+        drawInNextDrawable(loadAction: .load) { encoder in
+
+            // MARK: - Draw
+
+            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+            
+            /// Bind vertex buffers
+            //encoder.setVertexBytes(vertexBuffer, length: _points.count * 2 * MemoryLayout<Float>.size, index: 0)
+            encoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+            
+            /// Bind fragment buffers
+            encoder.setFragmentTexture(brushTexture.texture, index: 0)
+            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+            
+            /// Set viewport
+            encoder.setViewport(viewport)
+            
+            /// Drawcall
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: _points.count)
+        }
+    }
+    
     // Reads previously recorded points and draws them onscreen. This is the Shake Me message that appears when the application launches.
 
     private func playback(_ recordedPaths: [Data], fromIndex index: Int) {
@@ -393,12 +442,12 @@ class PaintingView: UIView {
         // To make it work on both 32-bit and 64-bit devices, we make sure we read back 32 bits each time.
 
         let data = recordedPaths[index]
-        let count = data.count / (MemoryLayout<Float32>.size*2) // each point contains 64 bits (32-bit x and 32-bit y)
+        let count = data.count / (MemoryLayout<Float32>.size * 2) // each point contains 64 bits (32-bit x and 32-bit y)
 
         // Render the current path
         data.withUnsafeBytes { bytes in
             let floats = bytes.bindMemory(to: Float32.self).baseAddress!
-            for i in 0..<count - 1 {
+            for i in 0 ..< count - 1 {
 
                 var x = floats[2*i]
                 var y = floats[2*i+1]
@@ -424,53 +473,99 @@ class PaintingView: UIView {
     // Handles the start of a touch
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
+        points.removeAll(keepingCapacity: true)
+        
         let bounds = self.bounds
         let touch = event!.touches(for: self)!.first!
         firstTouch = true
         // Convert touch point from UIView referential to OpenGL one (upside-down flip)
         location = touch.location(in: self)
         location.y = bounds.size.height - location.y
+        
+        points.append(location)
     }
 
     // Handles the continuation of a touch.
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         let bounds = self.bounds
-        let touch = event!.touches(for: self)!.first!
-
-        // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-        if firstTouch {
-            firstTouch = false
-            previousLocation = touch.previousLocation(in: self)
-            previousLocation.y = bounds.size.height - previousLocation.y
-        } else {
-            location = touch.location(in: self)
-            location.y = bounds.size.height - location.y
-            previousLocation = touch.previousLocation(in: self)
-            previousLocation.y = bounds.size.height - previousLocation.y
+//        let touch = event!.touches(for: self)!.first!
+        
+        guard let touch: UITouch = touches.first,
+              let event: UIEvent = event,
+              let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch),
+              let predictedTouches: [UITouch] = event.predictedTouches(for: touch) else {
+                
+            return ()
         }
+        
+        //debug
+        print(coalescedTouches.count)
+        
+        for touch in coalescedTouches {
 
+            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+            if firstTouch {
+                firstTouch = false
+                previousLocation = touch.previousLocation(in: self)
+                previousLocation.y = bounds.size.height - previousLocation.y
+                
+                points.append(previousLocation)
+                
+            } else {
+                location = touch.location(in: self)
+                location.y = bounds.size.height - location.y
+                previousLocation = touch.previousLocation(in: self)
+                previousLocation.y = bounds.size.height - previousLocation.y
+                
+                points.append(location)
+            }
+        }
+        
+        for touch in predictedTouches {
+
+            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+            if firstTouch {
+                firstTouch = false
+                previousLocation = touch.previousLocation(in: self)
+                previousLocation.y = bounds.size.height - previousLocation.y
+                
+                points.append(previousLocation)
+                
+            } else {
+                location = touch.location(in: self)
+                location.y = bounds.size.height - location.y
+                previousLocation = touch.previousLocation(in: self)
+                previousLocation.y = bounds.size.height - previousLocation.y
+                
+                points.append(location)
+            }
+        }
+        
         // Render the stroke
-        self.renderLine(from: previousLocation, to: location)
+        //self.renderLine(from: previousLocation, to: location)
+        self.renderLine(points: points)
     }
 
     // Handles the end of a touch event when the touch is a tap.
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        let bounds = self.bounds
-        let touch = event!.touches(for: self)!.first!
-        if firstTouch {
-            firstTouch = false
-            previousLocation = touch.previousLocation(in: self)
-            previousLocation.y = bounds.size.height - previousLocation.y
-            self.renderLine(from: previousLocation, to: location)
-        }
+//        let bounds = self.bounds
+//        let touch = event!.touches(for: self)!.first!
+//        if firstTouch {
+//            firstTouch = false
+//            previousLocation = touch.previousLocation(in: self)
+//            previousLocation.y = bounds.size.height - previousLocation.y
+//            self.renderLine(from: previousLocation, to: location)
+//        }
+        points.removeAll(keepingCapacity: true)
     }
 
     // Handles the end of a touch event.
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         // If appropriate, add code necessary to save the state of the application.
         // This application is not saving state.
+        points.removeAll(keepingCapacity: true)
     }
 
     func setBrushColor(red: CGFloat, green: CGFloat, blue: CGFloat) {
