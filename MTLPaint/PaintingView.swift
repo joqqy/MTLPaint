@@ -540,7 +540,6 @@ class PaintingView: UIView {
         }
     }
 
-
     override var canBecomeFirstResponder : Bool {
         return true
     }
