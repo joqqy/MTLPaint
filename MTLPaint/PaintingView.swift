@@ -161,8 +161,7 @@ class PaintingView: UIView {
             pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
             pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
 
-            program[i].pipelineState = try! metalDevice
-                .makeRenderPipelineState(descriptor: pipelineStateDescriptor)
+            program[i].pipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
 
             // Set constant/initalize uniforms
             if i == PROGRAM_POINT {
@@ -241,15 +240,7 @@ class PaintingView: UIView {
 
         // Load shaders
         self.setupShaders()
-
-        // Playback recorded path, which is "Shake Me"
-        let recordedPaths = NSArray(contentsOfFile: Bundle.main.path(forResource: "Recording", ofType: "data")!)! as! [Data]
-        if recordedPaths.count != 0 {
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 200 * NSEC_PER_MSEC.d / NSEC_PER_SEC.d) {
-                self.playback(recordedPaths, fromIndex: 0)
-            }
-        }
-
+        
         return true
     }
 
@@ -435,41 +426,7 @@ class PaintingView: UIView {
         }
     }
     
-    // Reads previously recorded points and draws them onscreen. This is the Shake Me message that appears when the application launches.
-
-    private func playback(_ recordedPaths: [Data], fromIndex index: Int) {
-        // NOTE: Recording.data is stored with 32-bit floats
-        // To make it work on both 32-bit and 64-bit devices, we make sure we read back 32 bits each time.
-
-        let data = recordedPaths[index]
-        let count = data.count / (MemoryLayout<Float32>.size * 2) // each point contains 64 bits (32-bit x and 32-bit y)
-
-        // Render the current path
-        data.withUnsafeBytes { bytes in
-            let floats = bytes.bindMemory(to: Float32.self).baseAddress!
-            for i in 0 ..< count - 1 {
-
-                var x = floats[2*i]
-                var y = floats[2*i+1]
-                let point1 = CGPoint(x: x.g, y: y.g)
-
-                x = floats[2*(i+1)]
-                y = floats[2*(i+1)+1]
-                let point2 = CGPoint(x: x.g, y: y.g)
-
-                self.renderLine(from: point1, to: point2)
-            }
-        }
-
-        // Render the next path after a short delay
-        if recordedPaths.count > index+1 {
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 10 * NSEC_PER_MSEC.d / NSEC_PER_SEC.d) {
-                self.playback(recordedPaths, fromIndex: index+1)
-            }
-        }
-    }
-
-
+    
     // Handles the start of a touch
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
@@ -522,29 +479,30 @@ class PaintingView: UIView {
             }
         }
         
-        for touch in predictedTouches {
-
-            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-            if firstTouch {
-                firstTouch = false
-                previousLocation = touch.previousLocation(in: self)
-                previousLocation.y = bounds.size.height - previousLocation.y
-                
-                points.append(previousLocation)
-                
-            } else {
-                location = touch.location(in: self)
-                location.y = bounds.size.height - location.y
-                previousLocation = touch.previousLocation(in: self)
-                previousLocation.y = bounds.size.height - previousLocation.y
-                
-                points.append(location)
-            }
-        }
+//        for touch in predictedTouches {
+//
+//            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+//            if firstTouch {
+//                firstTouch = false
+//                previousLocation = touch.previousLocation(in: self)
+//                previousLocation.y = bounds.size.height - previousLocation.y
+//
+//                points.append(previousLocation)
+//
+//            } else {
+//                location = touch.location(in: self)
+//                location.y = bounds.size.height - location.y
+//                previousLocation = touch.previousLocation(in: self)
+//                previousLocation.y = bounds.size.height - previousLocation.y
+//
+//                points.append(location)
+//            }
+//        }
         
         // Render the stroke
         //self.renderLine(from: previousLocation, to: location)
         self.renderLine(points: points)
+        points.removeAll(keepingCapacity: true)
     }
 
     // Handles the end of a touch event when the touch is a tap.
