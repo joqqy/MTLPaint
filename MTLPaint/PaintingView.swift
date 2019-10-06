@@ -18,7 +18,7 @@ enum LoadAction {
 
 let kBrushOpacity = (1.0 / 1.0)
 let kBrushPixelStep = 1.0
-let kBrushScale = 5
+let kBrushScale = 8
 
 
 // MARK: - Shaders
@@ -398,8 +398,7 @@ class PaintingView: UIView {
             let p0 = pointsf2[i]
             let p1 = pointsf2[i+1]
             
-//            vertexBuffer.append(_points[i].x.f)
-//            vertexBuffer.append(_points[i].y.f)
+            vertexBuffer.append(p0)
             
             // MARK: - Add points to the buffer so there are drawing points every X pixels
             let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
@@ -410,8 +409,7 @@ class PaintingView: UIView {
                 vertexBuffer.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
             }
 
-//            vertexBuffer.append(_points[i+1].x.f)
-//            vertexBuffer.append(_points[i+1].y.f)
+            vertexBuffer.append(p1)
         }
         
         let newCount = vertexBuffer.count
@@ -502,15 +500,17 @@ class PaintingView: UIView {
             let p0 = vertexBuffer[i]
             let p1 = vertexBuffer[i+1]
             
+            //vertexBuffer2.append(p0)
+            
             // MARK: - Add points to the buffer so there are drawing points every X pixels
             let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
                                                    (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
             
             for i in 0 ..< spacingCount {
-
                 vertexBuffer2.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
             }
 
+            //vertexBuffer2.append(p1)
         }
         
         let newCount = vertexBuffer2.count
@@ -583,22 +583,22 @@ class PaintingView: UIView {
         
         for touch in coalescedTouches {
 
-            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-            if firstTouch {
-                firstTouch = false
-                previousLocation = touch.previousLocation(in: self)
-                previousLocation.y = bounds.size.height - previousLocation.y
-                
-                points.append(previousLocation)
-
-            } else {
+//            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+//            if firstTouch {
+//                firstTouch = false
+//                previousLocation = touch.previousLocation(in: self)
+//                previousLocation.y = bounds.size.height - previousLocation.y
+//
+//                points.append(previousLocation)
+//
+//            } else {
                 location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 previousLocation = touch.previousLocation(in: self)
                 previousLocation.y = bounds.size.height - previousLocation.y
 
                 points.append(location)
-            }
+//            }
         }
         
 //        for touch in predictedTouches {
@@ -625,8 +625,8 @@ class PaintingView: UIView {
         //self.renderLine(from: previousLocation, to: location)
         
         //self.renderLine(points: points)
-        //self.renderLineBezier(points: points)
-        self.renderLineBezier2(points: points)
+        self.renderLineBezier(points: points)
+        //self.renderLineBezier2(points: points)
         
         // store last point
         let point = points.removeLast()
