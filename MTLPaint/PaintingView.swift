@@ -16,9 +16,9 @@ enum LoadAction {
 
 // MARK: - CONSTANTS:
 
-let kBrushOpacity = (1.0 / 3.0)
-let kBrushPixelStep = 3
-let kBrushScale = 2
+let kBrushOpacity = (1.0 / 1.0)
+let kBrushPixelStep = 1
+let kBrushScale = 5
 
 
 // MARK: - Shaders
@@ -315,9 +315,10 @@ class PaintingView: UIView {
         let sourceSize = MTLSize(width: drawable.texture.width, height: drawable.texture.height, depth: 1)
         blit.copy(from: renderTargetTexture, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0), sourceSize: sourceSize, to: drawable.texture, destinationSlice: 0, destinationLevel: 0, destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
         blit.endEncoding()
-        
+       
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        
     }
 
     // Erases the screen
@@ -328,6 +329,55 @@ class PaintingView: UIView {
     }
 
     // Drawings a line onscreen based on where the user touches
+    private func renderLine0(from _start: CGPoint, to _end: CGPoint) {
+
+        // MARK: - Convert locations from Points to Pixels
+        let scale: CGFloat = self.contentScaleFactor
+        var start: CGPoint = _start
+        start.x *= scale
+        start.y *= scale
+        var end: CGPoint = _end
+        end.x *= scale
+        end.y *= scale
+
+        // MARK: - Allocate vertex array buffer
+        var vertexBuffer: [Float] = []
+
+        // MARK: - Add points to the buffer so there are drawing points every X pixels
+        let count = max(Int(ceilf(sqrtf((end.x - start.x).f * (end.x - start.x).f + (end.y - start.y).f * (end.y - start.y).f) / kBrushPixelStep.f)), 1)
+
+        vertexBuffer.reserveCapacity(count * 2)
+
+        for i in 0 ..< count {
+
+            vertexBuffer.append(start.x.f + (end.x - start.x).f * (i.f / count.f))
+            vertexBuffer.append(start.y.f + (end.y - start.y).f * (i.f / count.f))
+        }
+
+        drawInNextDrawable(loadAction: .load) {encoder in
+
+            // MARK: - Draw
+
+            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+            
+            /// Bind vertex buffers
+            encoder.setVertexBytes(vertexBuffer, length: count * 2 * MemoryLayout<Float>.size, index: 0)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+            
+            /// Bind fragment buffers
+            encoder.setFragmentTexture(brushTexture.texture, index: 0)
+            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+            
+            /// Set viewport
+            encoder.setViewport(viewport)
+            
+            /// Drawcall
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: count)
+        }
+    }
+    
     private func renderLine(from _start: CGPoint, to _end: CGPoint) {
 
         // MARK: - Convert locations from Points to Pixels
@@ -390,11 +440,8 @@ class PaintingView: UIView {
         // MARK: - Allocate vertex array buffer
         var vertexBuffer: [Float] = []
 
-       
         vertexBuffer.reserveCapacity(_points.count * 2)
         
-        var newCount = _points.count
-
         for i in 0 ..< _points.count - 1 {
             
             let p0 = _points[i]
@@ -404,20 +451,23 @@ class PaintingView: UIView {
             vertexBuffer.append(_points[i].y.f)
             
             // MARK: - Add points to the buffer so there are drawing points every X pixels
-            let count = max(Int(ceilf(sqrtf((p1.x - p0.x).f * (p1.x - p0.x).f + (p1.y - p0.y).f * (p1.y - p0.y).f) / kBrushPixelStep.f)), 1)
-            newCount += count
+            let spacingCount = max(Int(ceilf(sqrtf((p1.x - p0.x).f * (p1.x - p0.x).f +
+                                                   (p1.y - p0.y).f * (p1.y - p0.y).f) / kBrushPixelStep.f)), 1)
             
-            for i in 0 ..< count {
+            for i in 0 ..< spacingCount {
 
-                vertexBuffer.append(p0.x.f + (p1.x - p0.x).f * (i.f / count.f))
-                vertexBuffer.append(p0.y.f + (p1.y - p0.y).f * (i.f / count.f))
+                vertexBuffer.append(p0.x.f + (p1.x - p0.x).f * (i.f / spacingCount.f))
+                vertexBuffer.append(p0.y.f + (p1.y - p0.y).f * (i.f / spacingCount.f))
             }
 
             vertexBuffer.append(_points[i+1].x.f)
             vertexBuffer.append(_points[i+1].y.f)
         }
         
-        vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * newCount * 2, options: [])
+        let newCount = vertexBuffer.count
+        if newCount > 0 {
+            vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * newCount, options: [])
+        }
 
         drawInNextDrawable(loadAction: .load) { encoder in
 
@@ -444,6 +494,114 @@ class PaintingView: UIView {
         }
     }
     
+    private func renderLineBezier(points: [CGPoint]) {
+        
+         var _points = points
+
+        for i in 0 ..< points.count {
+            
+            _points[i].x = points[i].x
+            _points[i].y = points[i].y
+        }
+
+        // MARK: - Allocate vertex array buffer
+        var vertexBuffer: [SIMD2<Float>] = []
+
+        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: _points, closed: false) {
+            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        }
+        
+        let newCount = vertexBuffer.count
+        if newCount > 0 {
+            vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+        }
+
+        drawInNextDrawable(loadAction: .load) { encoder in
+
+            // MARK: - Draw
+
+            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+            
+            /// Bind vertex buffers
+            //encoder.setVertexBytes(vertexBuffer, length: _points.count * 2 * MemoryLayout<Float>.size, index: 0)
+            encoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+            
+            /// Bind fragment buffers
+            encoder.setFragmentTexture(brushTexture.texture, index: 0)
+            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+            
+            /// Set viewport
+            encoder.setViewport(viewport)
+            
+            /// Drawcall
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
+        }
+    }
+    
+    private func renderLineBezier2(points: [CGPoint]) {
+        
+        // MARK: - Allocate vertex array buffer
+        var vertexBuffer: [SIMD2<Float>] = []
+
+        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
+            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        }
+        
+        guard vertexBuffer.count > 1 else {
+            return
+        }
+        
+        var vertexBuffer2: [SIMD2<Float>] = []
+        for i in 0 ..< vertexBuffer.count - 1 {
+            
+            let p0 = vertexBuffer[i]
+            let p1 = vertexBuffer[i+1]
+            
+            // MARK: - Add points to the buffer so there are drawing points every X pixels
+            let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
+                                                   (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
+            
+            for i in 0 ..< spacingCount {
+
+                vertexBuffer2.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
+            }
+
+        }
+        
+        let newCount = vertexBuffer2.count
+        print("newCount: \(newCount)")
+        if newCount > 0 {
+            vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer2, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+        }
+
+        drawInNextDrawable(loadAction: .load) { encoder in
+
+            // MARK: - Draw
+
+            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+            
+            /// Bind vertex buffers
+            //encoder.setVertexBytes(vertexBuffer, length: _points.count * 2 * MemoryLayout<Float>.size, index: 0)
+            encoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+            
+            /// Bind fragment buffers
+            encoder.setFragmentTexture(brushTexture.texture, index: 0)
+            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+            
+            /// Set viewport
+            encoder.setViewport(viewport)
+            
+            /// Drawcall
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
+        }
+
+    }
     
     // Handles the start of a touch
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -474,8 +632,12 @@ class PaintingView: UIView {
             return ()
         }
         
+        location = touch.location(in: self)
+        location.y = bounds.size.height - location.y
+        points.append(location)
+        
         //debug
-        print(coalescedTouches.count)
+        print("coalesced: \(coalescedTouches.count)")
         
         for touch in coalescedTouches {
 
@@ -484,15 +646,15 @@ class PaintingView: UIView {
                 firstTouch = false
                 previousLocation = touch.previousLocation(in: self)
                 previousLocation.y = bounds.size.height - previousLocation.y
-                
+
                 points.append(previousLocation)
-                
+
             } else {
                 location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 previousLocation = touch.previousLocation(in: self)
                 previousLocation.y = bounds.size.height - previousLocation.y
-                
+
                 points.append(location)
             }
         }
@@ -519,8 +681,12 @@ class PaintingView: UIView {
         
         // Render the stroke
         //self.renderLine(from: previousLocation, to: location)
-        self.renderLine(points: points)
+        
+        //self.renderLine(points: points)
+        //self.renderLineBezier(points: points)
+        self.renderLineBezier2(points: points)
         points.removeAll(keepingCapacity: true)
+        
     }
 
     // Handles the end of a touch event when the touch is a tap.
@@ -532,7 +698,13 @@ class PaintingView: UIView {
 //            firstTouch = false
 //            previousLocation = touch.previousLocation(in: self)
 //            previousLocation.y = bounds.size.height - previousLocation.y
-//            self.renderLine(from: previousLocation, to: location)
+//
+//            self.points.append(previousLocation)
+//
+//            //self.renderLine(points: points)
+//            self.renderLineBezier(points: points)
+//            //self.renderLineBezier2(points: points)
+//            //self.renderLine(from: previousLocation, to: location)
 //        }
         
         points.removeAll(keepingCapacity: true)
@@ -577,4 +749,34 @@ class PaintingView: UIView {
     override var canBecomeFirstResponder : Bool {
         return true
     }
+}
+
+
+extension PaintingView {
+    
+        /// Getting the points from the bezier stroke, we put them into the buffer type we will use to send to the GPU
+        private func extractPoints_fromUIBezierPath(_ bezPath: UIBezierPath?) -> [Float]? {
+            
+            if let bezPath: UIBezierPath = bezPath,
+               !bezPath.isEmpty {
+                
+                return bezPath.cgPath.points_f!
+
+            }
+                
+           return nil
+        }
+    
+    private func extractPoints_fromUIBezierPath_f2(_ bezPath: UIBezierPath?) -> [SIMD2<Float>]? {
+        
+        if let bezPath: UIBezierPath = bezPath,
+           !bezPath.isEmpty {
+            
+            return bezPath.cgPath.points_f2!
+
+        }
+            
+       return nil
+    }
+
 }

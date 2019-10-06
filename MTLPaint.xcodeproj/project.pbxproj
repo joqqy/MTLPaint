@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D006DEA1234A11B6009D0750 /* UIBezierPath+Interpolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DE9F234A11B6009D0750 /* UIBezierPath+Interpolation.swift */; };
+		D006DEA2234A11B6009D0750 /* UIBezierPath+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEA0234A11B6009D0750 /* UIBezierPath+Extensions.swift */; };
+		D006DEA4234A2443009D0750 /* CGPath+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEA3234A2443009D0750 /* CGPath+Extensions.swift */; };
+		D006DEBC234A24F3009D0750 /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEA8234A24F2009D0750 /* CGFloat+Extensions.swift */; };
+		D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */; };
 		D7A0FDCA226D9EE900D53FA1 /* Purple.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC5226D9EE900D53FA1 /* Purple.png */; };
 		D7A0FDCB226D9EE900D53FA1 /* Yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC6226D9EE900D53FA1 /* Yellow.png */; };
 		D7A0FDCC226D9EE900D53FA1 /* Red.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC7226D9EE900D53FA1 /* Red.png */; };
@@ -30,6 +35,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D006DE9F234A11B6009D0750 /* UIBezierPath+Interpolation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIBezierPath+Interpolation.swift"; sourceTree = "<group>"; };
+		D006DEA0234A11B6009D0750 /* UIBezierPath+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIBezierPath+Extensions.swift"; sourceTree = "<group>"; };
+		D006DEA3234A2443009D0750 /* CGPath+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CGPath+Extensions.swift"; sourceTree = "<group>"; };
+		D006DEA8234A24F2009D0750 /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
+		D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Extensions.swift"; sourceTree = "<group>"; };
 		D7A0FDC5226D9EE900D53FA1 /* Purple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Purple.png; sourceTree = "<group>"; };
 		D7A0FDC6226D9EE900D53FA1 /* Yellow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Yellow.png; sourceTree = "<group>"; };
 		D7A0FDC7226D9EE900D53FA1 /* Red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Red.png; sourceTree = "<group>"; };
@@ -65,6 +75,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D006DE9E234A1187009D0750 /* Bezier */ = {
+			isa = PBXGroup;
+			children = (
+				D006DEA8234A24F2009D0750 /* CGFloat+Extensions.swift */,
+				D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */,
+				D006DEA3234A2443009D0750 /* CGPath+Extensions.swift */,
+				D006DEA0234A11B6009D0750 /* UIBezierPath+Extensions.swift */,
+				D006DE9F234A11B6009D0750 /* UIBezierPath+Interpolation.swift */,
+			);
+			path = Bezier;
+			sourceTree = "<group>";
+		};
 		D7A0FDC4226D9E9600D53FA1 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -96,6 +118,7 @@
 		D7AACE132265BE9B00EB674A = {
 			isa = PBXGroup;
 			children = (
+				D006DE9E234A1187009D0750 /* Bezier */,
 				D7AACE312265BF1400EB674A /* ReadMe.md */,
 				D7AACE1E2265BE9B00EB674A /* MTLPaint */,
 				D7AACE352265C06100EB674A /* OOPUtil */,
@@ -222,12 +245,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D006DEA2234A11B6009D0750 /* UIBezierPath+Extensions.swift in Sources */,
 				D7A8BA38226DF2B200C10FCB /* Shaders.metal in Sources */,
+				D006DEBC234A24F3009D0750 /* CGFloat+Extensions.swift in Sources */,
+				D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */,
 				D7AACE222265BE9B00EB674A /* PaintingViewController.swift in Sources */,
 				D7AACE202265BE9B00EB674A /* AppDelegate.swift in Sources */,
 				D7A8BA3C226E165F00C10FCB /* AAPLMathUtilities.swift in Sources */,
+				D006DEA1234A11B6009D0750 /* UIBezierPath+Interpolation.swift in Sources */,
 				D7AACE392265C10100EB674A /* PaintingView.swift in Sources */,
 				D7AACE372265C08700EB674A /* NumTypes+Conversion.swift in Sources */,
+				D006DEA4234A2443009D0750 /* CGPath+Extensions.swift in Sources */,
 				D7AACE342265C02700EB674A /* SoundEffect.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -305,7 +333,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -360,7 +388,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

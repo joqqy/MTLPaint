@@ -288,12 +288,7 @@ extension Double {
 }
 
 extension CGFloat {
-    public var d: Double {
-        return Double(self)
-    }
-    public var f: Float {
-        return Float(self)
-    }
+   
 }
 
 //Int8
