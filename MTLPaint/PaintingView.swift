@@ -17,7 +17,7 @@ enum LoadAction {
 // MARK: - CONSTANTS:
 
 let kBrushOpacity = (1.0 / 1.0)
-let kBrushPixelStep = 1
+let kBrushPixelStep = 1.0
 let kBrushScale = 5
 
 
@@ -329,54 +329,6 @@ class PaintingView: UIView {
     }
 
     // Drawings a line onscreen based on where the user touches
-    private func renderLine0(from _start: CGPoint, to _end: CGPoint) {
-
-        // MARK: - Convert locations from Points to Pixels
-        let scale: CGFloat = self.contentScaleFactor
-        var start: CGPoint = _start
-        start.x *= scale
-        start.y *= scale
-        var end: CGPoint = _end
-        end.x *= scale
-        end.y *= scale
-
-        // MARK: - Allocate vertex array buffer
-        var vertexBuffer: [Float] = []
-
-        // MARK: - Add points to the buffer so there are drawing points every X pixels
-        let count = max(Int(ceilf(sqrtf((end.x - start.x).f * (end.x - start.x).f + (end.y - start.y).f * (end.y - start.y).f) / kBrushPixelStep.f)), 1)
-
-        vertexBuffer.reserveCapacity(count * 2)
-
-        for i in 0 ..< count {
-
-            vertexBuffer.append(start.x.f + (end.x - start.x).f * (i.f / count.f))
-            vertexBuffer.append(start.y.f + (end.y - start.y).f * (i.f / count.f))
-        }
-
-        drawInNextDrawable(loadAction: .load) {encoder in
-
-            // MARK: - Draw
-
-            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
-            
-            /// Bind vertex buffers
-            encoder.setVertexBytes(vertexBuffer, length: count * 2 * MemoryLayout<Float>.size, index: 0)
-            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
-            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
-            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
-            
-            /// Bind fragment buffers
-            encoder.setFragmentTexture(brushTexture.texture, index: 0)
-            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
-            
-            /// Set viewport
-            encoder.setViewport(viewport)
-            
-            /// Drawcall
-            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: count)
-        }
-    }
     
     private func renderLine(from _start: CGPoint, to _end: CGPoint) {
 
@@ -400,7 +352,6 @@ class PaintingView: UIView {
         for i in 0 ..< count {
 
             vertexBuffer.append(start.x.f + (end.x - start.x).f * (i.f / count.f))
-            vertexBuffer.append(start.y.f + (end.y - start.y).f * (i.f / count.f))
         }
 
         drawInNextDrawable(loadAction: .load) {encoder in
@@ -429,44 +380,43 @@ class PaintingView: UIView {
 
     private func renderLine(points: [CGPoint]) {
         
-         var _points = points
+        var pointsf2: [SIMD2<Float>] = []
 
         for i in 0 ..< points.count {
             
-            _points[i].x = points[i].x * self.contentScaleFactor
-            _points[i].y = points[i].y * self.contentScaleFactor
+            let x = points[i].x.f * self.contentScaleFactor.f
+            let y = points[i].y.f * self.contentScaleFactor.f
+            
+            pointsf2.append(SIMD2(x, y))
         }
 
         // MARK: - Allocate vertex array buffer
-        var vertexBuffer: [Float] = []
+        var vertexBuffer: [SIMD2<Float>] = []
 
-        vertexBuffer.reserveCapacity(_points.count * 2)
-        
-        for i in 0 ..< _points.count - 1 {
+        for i in 0 ..< pointsf2.count - 1 {
             
-            let p0 = _points[i]
-            let p1 = _points[i+1]
+            let p0 = pointsf2[i]
+            let p1 = pointsf2[i+1]
             
-            vertexBuffer.append(_points[i].x.f)
-            vertexBuffer.append(_points[i].y.f)
+//            vertexBuffer.append(_points[i].x.f)
+//            vertexBuffer.append(_points[i].y.f)
             
             // MARK: - Add points to the buffer so there are drawing points every X pixels
-            let spacingCount = max(Int(ceilf(sqrtf((p1.x - p0.x).f * (p1.x - p0.x).f +
-                                                   (p1.y - p0.y).f * (p1.y - p0.y).f) / kBrushPixelStep.f)), 1)
+            let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
+                                                   (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
             
             for i in 0 ..< spacingCount {
 
-                vertexBuffer.append(p0.x.f + (p1.x - p0.x).f * (i.f / spacingCount.f))
-                vertexBuffer.append(p0.y.f + (p1.y - p0.y).f * (i.f / spacingCount.f))
+                vertexBuffer.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
             }
 
-            vertexBuffer.append(_points[i+1].x.f)
-            vertexBuffer.append(_points[i+1].y.f)
+//            vertexBuffer.append(_points[i+1].x.f)
+//            vertexBuffer.append(_points[i+1].y.f)
         }
         
         let newCount = vertexBuffer.count
         if newCount > 0 {
-            vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<Float>.stride * newCount, options: [])
+            vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
         }
 
         drawInNextDrawable(loadAction: .load) { encoder in
@@ -496,18 +446,10 @@ class PaintingView: UIView {
     
     private func renderLineBezier(points: [CGPoint]) {
         
-         var _points = points
-
-        for i in 0 ..< points.count {
-            
-            _points[i].x = points[i].x
-            _points[i].y = points[i].y
-        }
-
         // MARK: - Allocate vertex array buffer
         var vertexBuffer: [SIMD2<Float>] = []
 
-        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: _points, closed: false) {
+        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
         }
         
@@ -646,7 +588,7 @@ class PaintingView: UIView {
                 firstTouch = false
                 previousLocation = touch.previousLocation(in: self)
                 previousLocation.y = bounds.size.height - previousLocation.y
-
+                
                 points.append(previousLocation)
 
             } else {
@@ -685,27 +627,40 @@ class PaintingView: UIView {
         //self.renderLine(points: points)
         //self.renderLineBezier(points: points)
         self.renderLineBezier2(points: points)
+        
+        // store last point
+        let point = points.removeLast()
+        
+        // empty all
         points.removeAll(keepingCapacity: true)
+        
+        // add stored last point
+        points.append(point)
         
     }
 
     // Handles the end of a touch event when the touch is a tap.
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-//        let bounds = self.bounds
-//        let touch = event!.touches(for: self)!.first!
+        let bounds = self.bounds
+        let touch = event!.touches(for: self)!.first!
 //        if firstTouch {
 //            firstTouch = false
 //            previousLocation = touch.previousLocation(in: self)
 //            previousLocation.y = bounds.size.height - previousLocation.y
-//
 //            self.points.append(previousLocation)
 //
-//            //self.renderLine(points: points)
-//            self.renderLineBezier(points: points)
+//
+//            self.renderLine(points: points)
+//            //self.renderLineBezier(points: points)
 //            //self.renderLineBezier2(points: points)
 //            //self.renderLine(from: previousLocation, to: location)
 //        }
+        
+        location = touch.location(in: self)
+        location.y = bounds.size.height - location.y
+        self.points.append(location)
+        self.renderLine(points: self.points)
         
         points.removeAll(keepingCapacity: true)
     }
