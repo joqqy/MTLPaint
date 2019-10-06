@@ -447,9 +447,22 @@ class PaintingView: UIView {
         // MARK: - Allocate vertex array buffer
         var vertexBuffer: [SIMD2<Float>] = []
 
-        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
-            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
-        }
+//        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
+//            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+//        }
+        
+//        guard points.count > 1 else { return }
+//        let catmullRom_bezPath = INTERP.interpolateCGPointsWithHermite(
+//             pointsAsNSValues: points,
+//             closed: false)
+//             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+             
+        guard points.count > 3 else { return }
+        let catmullRom_bezPath = INTERP.interpolateCGPointsWithCatmullRom(
+             pointsAsNSValues: points,
+             closed: false,
+             alpha: 0.5)
+        vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
         
         let newCount = vertexBuffer.count
         if newCount > 0 {
@@ -483,24 +496,37 @@ class PaintingView: UIView {
     
     private func renderLineBezier2(points: [CGPoint]) {
         
+        
         // MARK: - Allocate vertex array buffer
         var vertexBuffer: [SIMD2<Float>] = []
 
-        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
-            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
-        }
+        // Calculate bezier curve from touch points
+//        if let catmullRom_bezPath: UIBezierPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: points, closed: false) {
+//            vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+//        }
         
-        guard vertexBuffer.count > 1 else {
+//        let catmullRom_bezPath = INTERP.interpolateCGPointsWithHermite(
+//        pointsAsNSValues: points,
+//        closed: false)
+//        vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        
+        guard points.count > 3 else { return }
+        let catmullRom_bezPath = INTERP.interpolateCGPointsWithCatmullRom(
+        pointsAsNSValues: points,
+        closed: false,
+        alpha: 0.5)
+        vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        
+        guard vertexBuffer.count > 0 else {
             return
         }
         
+        // Interpolate between bezier curve points
         var vertexBuffer2: [SIMD2<Float>] = []
-        for i in 0 ..< vertexBuffer.count - 1 {
+        for i in 0 ..< vertexBuffer.count-1 {
             
             let p0 = vertexBuffer[i]
             let p1 = vertexBuffer[i+1]
-            
-            //vertexBuffer2.append(p0)
             
             // MARK: - Add points to the buffer so there are drawing points every X pixels
             let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
@@ -509,10 +535,9 @@ class PaintingView: UIView {
             for i in 0 ..< spacingCount {
                 vertexBuffer2.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
             }
-
-            //vertexBuffer2.append(p1)
         }
         
+        // Create the mtlbuffer
         let newCount = vertexBuffer2.count
         print("newCount: \(newCount)")
         if newCount > 0 {
@@ -542,29 +567,32 @@ class PaintingView: UIView {
             /// Drawcall
             encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
         }
-
     }
     
     // Handles the start of a touch
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         points.removeAll(keepingCapacity: true)
-        
+
         let bounds = self.bounds
         let touch = event!.touches(for: self)!.first!
+
         firstTouch = true
+
         // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-        location = touch.location(in: self)
+        var location = touch.location(in: self)
         location.y = bounds.size.height - location.y
-        
+
         points.append(location)
     }
+    
+    var useCoalescedTouches: Bool = true // :true
+    var usePredictedTouches: Bool = false // : false
 
     // Handles the continuation of a touch.
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        let bounds = self.bounds
-//        let touch = event!.touches(for: self)!.first!
+        let bounds: CGRect = self.bounds
         
         guard let touch: UITouch = touches.first,
               let event: UIEvent = event,
@@ -574,76 +602,58 @@ class PaintingView: UIView {
             return ()
         }
         
-        location = touch.location(in: self)
+        var location = touch.location(in: self)
         location.y = bounds.size.height - location.y
         points.append(location)
+                
+        if useCoalescedTouches {
+            
+            //debug
+            print("coalesced: \(coalescedTouches.count)")
         
-        //debug
-        print("coalesced: \(coalescedTouches.count)")
-        
-        for touch in coalescedTouches {
-
-//            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-//            if firstTouch {
-//                firstTouch = false
-//                previousLocation = touch.previousLocation(in: self)
-//                previousLocation.y = bounds.size.height - previousLocation.y
-//
-//                points.append(previousLocation)
-//
-//            } else {
-                location = touch.location(in: self)
+            for touch in coalescedTouches {
+                
+                var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                previousLocation = touch.previousLocation(in: self)
-                previousLocation.y = bounds.size.height - previousLocation.y
 
                 points.append(location)
-//            }
+            }
         }
         
-//        for touch in predictedTouches {
-//
-//            // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-//            if firstTouch {
-//                firstTouch = false
-//                previousLocation = touch.previousLocation(in: self)
-//                previousLocation.y = bounds.size.height - previousLocation.y
-//
-//                points.append(previousLocation)
-//
-//            } else {
-//                location = touch.location(in: self)
-//                location.y = bounds.size.height - location.y
-//                previousLocation = touch.previousLocation(in: self)
-//                previousLocation.y = bounds.size.height - previousLocation.y
-//
-//                points.append(location)
-//            }
-//        }
+        if usePredictedTouches {
+            for touch in predictedTouches {
+
+                var location = touch.location(in: self)
+                location.y = bounds.size.height - location.y
+                
+                points.append(location)
+            }
+        }
         
         // Render the stroke
         //self.renderLine(from: previousLocation, to: location)
         
         //self.renderLine(points: points)
-        self.renderLineBezier(points: points)
-        //self.renderLineBezier2(points: points)
+        
+        //self.renderLineBezier(points: points)
+        self.renderLineBezier2(points: points)
         
         // store last point
-        let point = points.removeLast()
+//        let point = points.removeLast()
         
         // empty all
         points.removeAll(keepingCapacity: true)
         
         // add stored last point
-        points.append(point)
+//        points.append(point)
         
     }
 
     // Handles the end of a touch event when the touch is a tap.
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        let bounds = self.bounds
-        let touch = event!.touches(for: self)!.first!
+//        let bounds = self.bounds
+//        let touch = event!.touches(for: self)!.first!
 //        if firstTouch {
 //            firstTouch = false
 //            previousLocation = touch.previousLocation(in: self)
@@ -657,12 +667,12 @@ class PaintingView: UIView {
 //            //self.renderLine(from: previousLocation, to: location)
 //        }
         
-        location = touch.location(in: self)
-        location.y = bounds.size.height - location.y
-        self.points.append(location)
-        self.renderLine(points: self.points)
-        
-        points.removeAll(keepingCapacity: true)
+//        var location = touch.location(in: self)
+//        location.y = bounds.size.height - location.y
+//        self.points.append(location)
+//        self.renderLine(points: self.points)
+//
+//        points.removeAll(keepingCapacity: true)
     }
 
     // Handles the end of a touch event.
@@ -670,7 +680,7 @@ class PaintingView: UIView {
         
         // If appropriate, add code necessary to save the state of the application.
         // This application is not saving state.
-        points.removeAll(keepingCapacity: true)
+        //points.removeAll(keepingCapacity: true)
     }
 
     func setBrushColor(red: CGFloat, green: CGFloat, blue: CGFloat) {
