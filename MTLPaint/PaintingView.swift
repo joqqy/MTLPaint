@@ -14,10 +14,11 @@ enum LoadAction {
     case clear(red: Double, green: Double, blue: Double, alpha: Double)
 }
 
-enum EInterpolationMethod {
+enum EInterpolationMethod: Int {
     
-    case hermite
-    case catmullRom
+    /// The raw value is the number of points to check for before trimming
+    case hermite = 1
+    case catmullRom = 3
 }
 
 // MARK: - Shaders
@@ -56,17 +57,18 @@ struct TextureInfo {
 class PaintingView: UIView {
     
     // MARK: - CONSTANTS:
-    let kBrushOpacity = (1.0 / 100.0)
-    let kBrushPixelStep = 8.0 // amount of pixels between any two points
+    let kBrushOpacity = (1.0 / 50.0)
+    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points
     let kBrushScale = 1.0
-    let maxPointsUntilTrim: Int = 8 // :8
     
-    var useCoalescedTouches: Bool = false // :false
-    var usePredictedTouches: Bool = false // : false
-    private var interpolation: EInterpolationMethod = .hermite // :.catmullRom
+    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
     
-    // The pixel dimensions of the backbuffer
+    var useCoalescedTouches: Bool = false // :false
+    var usePredictedTouches: Bool = false // :false
+    
+    
+    // MARK: - The pixel dimensions of the backbuffer
 
     private var backingWidth: Int = 0
     private var backingHeight: Int = 0
@@ -218,6 +220,7 @@ class PaintingView: UIView {
             let brushContext = CGContext(data: &brushData, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: (brushImage?.colorSpace!)!, bitmapInfo: bitmapInfo)
             // After you create the context, you can draw the  image to the context.
             brushContext?.draw(brushImage!, in: CGRect(x: 0.0, y: 0.0, width: width.g, height: height.g))
+            
             // You don't need the context at this point, so you need to release it to avoid memory leaks.
             //### ARC manages
             let loader = MTKTextureLoader(device: metalDevice)
@@ -342,26 +345,26 @@ class PaintingView: UIView {
         switch (self.interpolation)
         {
         case .hermite:
-            guard points.count > 3 else { return }
+            guard points.count > self.interpolation.rawValue else { return }
             let curve = INTERP.interpolateCGPointsWithHermite(
             pointsAsNSValues: points,
             closed: false)
             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(curve)!
             //-------------------
-            if self.points.count > self.maxPointsUntilTrim {
+            if self.points.count > self.interpolation.rawValue {
                 self.points.removeFirst()
             }
             //-------------------
             
         case .catmullRom:
-            guard points.count > 3 else { return }
+            guard points.count > self.interpolation.rawValue else { return }
             let curve = INTERP.interpolateCGPointsWithCatmullRom(
                 pointsAsNSValues: points,
                 closed: false,
                 alpha: 0.5)
             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(curve)!
             //-------------------
-            if self.points.count > self.maxPointsUntilTrim {
+            if self.points.count > self.interpolation.rawValue {
                 self.points.removeFirst()
             }
             //-------------------
