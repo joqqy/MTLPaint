@@ -455,14 +455,24 @@ class PaintingView: UIView {
 //        let catmullRom_bezPath = INTERP.interpolateCGPointsWithHermite(
 //             pointsAsNSValues: points,
 //             closed: false)
-//             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+//        vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        
+//        //-------------------
+//        // store last point
+//        let lastpoint = self.points.removeLast()
+//        //-------------------
              
         guard points.count > 3 else { return }
         let catmullRom_bezPath = INTERP.interpolateCGPointsWithCatmullRom(
-             pointsAsNSValues: points,
+            pointsAsNSValues: points,
              closed: false,
              alpha: 0.5)
         vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
+        //-------------------
+        if self.points.count > 8 {
+            self.points.removeFirst()
+        }
+        //-------------------
         
         let newCount = vertexBuffer.count
         print("newCount: \(newCount)")
@@ -492,6 +502,7 @@ class PaintingView: UIView {
             
             /// Drawcall
             encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
+
         }
     }
     
@@ -513,14 +524,15 @@ class PaintingView: UIView {
         
         guard points.count > 3 else { return }
         let catmullRom_bezPath = INTERP.interpolateCGPointsWithCatmullRom(
-        pointsAsNSValues: points,
-        closed: false,
-        alpha: 0.5)
+            pointsAsNSValues: points,
+            closed: false,
+            alpha: 0.5)
         vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
-        
-        guard vertexBuffer.count > 0 else {
-            return
+        //-------------------
+        if self.points.count > 8 {
+            self.points.removeFirst()
         }
+        //-------------------
         
         // Interpolate between bezier curve points
         var vertexBuffer2: [SIMD2<Float>] = []
@@ -585,7 +597,7 @@ class PaintingView: UIView {
         
     }
     
-    var useCoalescedTouches: Bool = true // :true
+    var useCoalescedTouches: Bool = false // :true
     var usePredictedTouches: Bool = false // : false
 
     // Handles the continuation of a touch.
@@ -613,15 +625,16 @@ class PaintingView: UIView {
                 
         // MARK: - Coalesced touches
         if useCoalescedTouches {
+            
             //debug
             print("coalesced: \(coalescedTouches.count)")
-            //for i in 0 ..< coalescedTouches.count {
+            
             for touch in coalescedTouches {
-                
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 points.append(location)
             }
+
         }
         
         // MARK: - Predicted touches
@@ -634,9 +647,9 @@ class PaintingView: UIView {
         }
         
         // Render the stroke
-
-        self.renderLineBezier(points: points)
-        //self.renderLineBezier2(points: points)
+ 
+        //self.renderLineBezier(points: points)
+        self.renderLineBezier2(points: points)
 
         // store last point
         //points.removeFirst()
