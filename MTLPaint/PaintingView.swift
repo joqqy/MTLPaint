@@ -513,27 +513,16 @@ class PaintingView: UIView {
     // MARK: - ENDED
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-//        let bounds = self.bounds
-//        let touch = event!.touches(for: self)!.first!
-//        if firstTouch {
-//            firstTouch = false
-//            previousLocation = touch.previousLocation(in: self)
-//            previousLocation.y = bounds.size.height - previousLocation.y
-//            self.points.append(previousLocation)
-//
-//
-//            self.renderLine(points: points)
-//            //self.renderLineBezier(points: points)
-//            //self.renderLineBezier2(points: points)
-//            //self.renderLine(from: previousLocation, to: location)
-//        }
-        
-//        var location = touch.location(in: self)
-//        location.y = bounds.size.height - location.y
-//        self.points.append(location)
-//        self.renderLine(points: self.points)
-//
+        let bounds = self.bounds
+        let touch = event!.touches(for: self)!.first!
+
+        var location = touch.location(in: self)
+        location.y = bounds.size.height - location.y
+        self.points.append(location)
+        self.renderLine(points: self.points)
+
         points.removeAll(keepingCapacity: true)
+
     }
 
     // MARK: - CANCELLED
