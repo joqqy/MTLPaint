@@ -134,6 +134,7 @@
 				1D721975234A9CF0007FE2CF /* Double+Extensions.swift */,
 				1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */,
 				D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */,
+				D7AACE362265C08700EB674A /* NumTypes+Conversion.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -180,11 +181,10 @@
 		D7AACE132265BE9B00EB674A = {
 			isa = PBXGroup;
 			children = (
-				1D721963234A9CF0007FE2CF /* Extensions */,
 				D006DE9E234A1187009D0750 /* Bridge */,
 				D7AACE312265BF1400EB674A /* ReadMe.md */,
 				D7AACE1E2265BE9B00EB674A /* MTLPaint */,
-				D7AACE352265C06100EB674A /* OOPUtil */,
+				1D721963234A9CF0007FE2CF /* Extensions */,
 				D7AACE3A2265C1EA00EB674A /* Other Sources */,
 				D7A8BA32226DE97F00C10FCB /* Shaders */,
 				D7A0FDC4226D9E9600D53FA1 /* Resources */,
@@ -209,14 +209,6 @@
 				D7AACE332265C02700EB674A /* SoundEffect.swift */,
 			);
 			path = MTLPaint;
-			sourceTree = "<group>";
-		};
-		D7AACE352265C06100EB674A /* OOPUtil */ = {
-			isa = PBXGroup;
-			children = (
-				D7AACE362265C08700EB674A /* NumTypes+Conversion.swift */,
-			);
-			path = OOPUtil;
 			sourceTree = "<group>";
 		};
 		D7AACE3A2265C1EA00EB674A /* Other Sources */ = {
