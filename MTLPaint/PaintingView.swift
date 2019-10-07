@@ -16,9 +16,9 @@ enum LoadAction {
 
 // MARK: - CONSTANTS:
 
-let kBrushOpacity = (1.0 / 1.0)
-let kBrushPixelStep = 10.0
-let kBrushScale = 8
+let kBrushOpacity = (1.0 / 100.0)
+let kBrushPixelStep = 8.0
+let kBrushScale = 1.0
 
 
 // MARK: - Shaders

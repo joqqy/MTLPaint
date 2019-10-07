@@ -27,6 +27,7 @@
 		1D721987234A9CF0007FE2CF /* Float+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721974234A9CF0007FE2CF /* Float+Extensions.swift */; };
 		1D721988234A9CF0007FE2CF /* Double+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721975234A9CF0007FE2CF /* Double+Extensions.swift */; };
 		1D721989234A9CF0007FE2CF /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */; };
+		1D892791234BAD7800694852 /* Particle2.png in Resources */ = {isa = PBXBuildFile; fileRef = 1D892790234BAD7700694852 /* Particle2.png */; };
 		D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */; };
 		D7A0FDCA226D9EE900D53FA1 /* Purple.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC5226D9EE900D53FA1 /* Purple.png */; };
 		D7A0FDCB226D9EE900D53FA1 /* Yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC6226D9EE900D53FA1 /* Yellow.png */; };
@@ -73,6 +74,7 @@
 		1D721974234A9CF0007FE2CF /* Float+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Float+Extensions.swift"; sourceTree = "<group>"; };
 		1D721975234A9CF0007FE2CF /* Double+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Double+Extensions.swift"; sourceTree = "<group>"; };
 		1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
+		1D892790234BAD7700694852 /* Particle2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Particle2.png; sourceTree = "<group>"; };
 		D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Extensions.swift"; sourceTree = "<group>"; };
 		D7A0FDC5226D9EE900D53FA1 /* Purple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Purple.png; sourceTree = "<group>"; };
 		D7A0FDC6226D9EE900D53FA1 /* Yellow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Yellow.png; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				D7AACE282265BE9C00EB674A /* LaunchScreen.storyboard */,
 				D7A8BA2B226DA1DC00C10FCB /* Info.plist */,
 				D7A8BA39226E06DF00C10FCB /* Particle.png */,
+				1D892790234BAD7700694852 /* Particle2.png */,
 				D7A8BA30226DD88000C10FCB /* Recording.data */,
 				D7A8BA2D226DA27F00C10FCB /* Select.caf */,
 				D7A8BA2C226DA27F00C10FCB /* Erase.caf */,
@@ -287,6 +290,7 @@
 				D7A0FDCE226D9EE900D53FA1 /* Green.png in Resources */,
 				D7A8BA2F226DA27F00C10FCB /* Select.caf in Resources */,
 				D7A8BA31226DD88000C10FCB /* Recording.data in Resources */,
+				1D892791234BAD7800694852 /* Particle2.png in Resources */,
 				D7A8BA3A226E06DF00C10FCB /* Particle.png in Resources */,
 				D7A0FDCA226D9EE900D53FA1 /* Purple.png in Resources */,
 				D7AACE272265BE9C00EB674A /* Assets.xcassets in Resources */,
