@@ -63,7 +63,7 @@ class PaintingView: UIView {
     
     var useCoalescedTouches: Bool = false // :false
     var usePredictedTouches: Bool = false // : false
-    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
+    private var interpolation: EInterpolationMethod = .hermite // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
     
     // The pixel dimensions of the backbuffer
@@ -541,6 +541,7 @@ class PaintingView: UIView {
         points.removeAll(keepingCapacity: true)
     }
     
+    
     // Erases the screen
     func erase() {
         drawInNextDrawable{_ in
@@ -578,7 +579,7 @@ class PaintingView: UIView {
     }
 }
 
-
+// pi add
 extension PaintingView {
     
     /// Getting the points from the bezier stroke, we put them into the buffer type we will use to send to the GPU
