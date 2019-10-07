@@ -138,9 +138,9 @@ extension CGPath {
                     
                 case .closeSubpath:
                     break
-                    
-                default:
-                    fatalError("unknown error")
+          
+                @unknown default:
+                    fatalError()
                 }
             }
             return arrayPoints

@@ -17,7 +17,7 @@ enum LoadAction {
 // MARK: - CONSTANTS:
 
 let kBrushOpacity = (1.0 / 1.0)
-let kBrushPixelStep = 1.0
+let kBrushPixelStep = 10.0
 let kBrushScale = 8
 
 
@@ -465,6 +465,7 @@ class PaintingView: UIView {
         vertexBuffer = self.extractPoints_fromUIBezierPath_f2(catmullRom_bezPath)!
         
         let newCount = vertexBuffer.count
+        print("newCount: \(newCount)")
         if newCount > 0 {
             vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
         }
@@ -573,17 +574,15 @@ class PaintingView: UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         points.removeAll(keepingCapacity: true)
-
+        
         let bounds = self.bounds
-        let touch = event!.touches(for: self)!.first!
-
-        firstTouch = true
-
+        guard let touch: UITouch = touches.first else { return () }
+        
         // Convert touch point from UIView referential to OpenGL one (upside-down flip)
         var location = touch.location(in: self)
         location.y = bounds.size.height - location.y
-
         points.append(location)
+        
     }
     
     var useCoalescedTouches: Bool = true // :true
@@ -592,57 +591,58 @@ class PaintingView: UIView {
     // Handles the continuation of a touch.
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        let bounds: CGRect = self.bounds
-        
         guard let touch: UITouch = touches.first,
               let event: UIEvent = event,
               let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch),
               let predictedTouches: [UITouch] = event.predictedTouches(for: touch) else {
-                
             return ()
         }
         
+        let bounds: CGRect = self.bounds
+        
+        // MARK: - Regular touches
         var location = touch.location(in: self)
         location.y = bounds.size.height - location.y
         points.append(location)
+        
+        /**
+         Note that coalesced points are not guaranteed to be added in serial order
+         and that is why we are getting the weird ring connections!!!
+         What would happen if we added the last coalesced point to the beginning, or skipped it alltogether?
+         */
                 
+        // MARK: - Coalesced touches
         if useCoalescedTouches {
-            
             //debug
             print("coalesced: \(coalescedTouches.count)")
-        
+            //for i in 0 ..< coalescedTouches.count {
             for touch in coalescedTouches {
                 
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-
                 points.append(location)
             }
         }
         
+        // MARK: - Predicted touches
         if usePredictedTouches {
             for touch in predictedTouches {
-
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                
                 points.append(location)
             }
         }
         
         // Render the stroke
-        //self.renderLine(from: previousLocation, to: location)
-        
-        //self.renderLine(points: points)
-        
-        //self.renderLineBezier(points: points)
-        self.renderLineBezier2(points: points)
-        
+
+        self.renderLineBezier(points: points)
+        //self.renderLineBezier2(points: points)
+
         // store last point
-//        let point = points.removeLast()
-        
+        //points.removeFirst()
+
         // empty all
-        points.removeAll(keepingCapacity: true)
+        //points.removeAll(keepingCapacity: true)
         
         // add stored last point
 //        points.append(point)
@@ -672,7 +672,7 @@ class PaintingView: UIView {
 //        self.points.append(location)
 //        self.renderLine(points: self.points)
 //
-//        points.removeAll(keepingCapacity: true)
+        points.removeAll(keepingCapacity: true)
     }
 
     // Handles the end of a touch event.
@@ -680,7 +680,7 @@ class PaintingView: UIView {
         
         // If appropriate, add code necessary to save the state of the application.
         // This application is not saving state.
-        //points.removeAll(keepingCapacity: true)
+        points.removeAll(keepingCapacity: true)
     }
 
     func setBrushColor(red: CGFloat, green: CGFloat, blue: CGFloat) {
@@ -719,28 +719,22 @@ class PaintingView: UIView {
 
 extension PaintingView {
     
-        /// Getting the points from the bezier stroke, we put them into the buffer type we will use to send to the GPU
-        private func extractPoints_fromUIBezierPath(_ bezPath: UIBezierPath?) -> [Float]? {
+    /// Getting the points from the bezier stroke, we put them into the buffer type we will use to send to the GPU
+    private func extractPoints_fromUIBezierPath(_ bezPath: UIBezierPath?) -> [Float]? {
             
-            if let bezPath: UIBezierPath = bezPath,
-               !bezPath.isEmpty {
-                
-                return bezPath.cgPath.points_f!
-
-            }
-                
-           return nil
+        if let bezPath: UIBezierPath = bezPath, !bezPath.isEmpty {
+            return bezPath.cgPath.points_f!
         }
+                
+        return nil
+    }
     
     private func extractPoints_fromUIBezierPath_f2(_ bezPath: UIBezierPath?) -> [SIMD2<Float>]? {
         
-        if let bezPath: UIBezierPath = bezPath,
-           !bezPath.isEmpty {
-            
+        if let bezPath: UIBezierPath = bezPath, !bezPath.isEmpty {
             return bezPath.cgPath.points_f2!
-
         }
-            
+        
        return nil
     }
 
