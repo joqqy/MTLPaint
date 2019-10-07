@@ -452,9 +452,7 @@ class PaintingView: UIView {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         guard let touch: UITouch = touches.first,
-              let event: UIEvent = event,
-              let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch),
-              let predictedTouches: [UITouch] = event.predictedTouches(for: touch) else {
+            let event: UIEvent = event else {
             return ()
         }
         
@@ -467,47 +465,39 @@ class PaintingView: UIView {
         
         /**
          Note that coalesced points are not guaranteed to be added in serial order
-         and that is why we are getting the weird ring connections!!!
-         What would happen if we added the last coalesced point to the beginning, or skipped it alltogether?
+         And so for interpolated splines, we cannot use coalsced if we havent solved the weird ordering of the coalesced points!
          */
                 
         // MARK: - Coalesced touches
         if useCoalescedTouches {
             
-            //debug
-            print("coalesced: \(coalescedTouches.count)")
-            
-            for touch in coalescedTouches {
-                var location = touch.location(in: self)
-                location.y = bounds.size.height - location.y
-                points.append(location)
+            if let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch) {
+                //debug
+                print("coalesced: \(coalescedTouches.count)")
+                
+                for touch in coalescedTouches {
+                    var location = touch.location(in: self)
+                    location.y = bounds.size.height - location.y
+                    points.append(location)
+                }
             }
-
         }
         
         // MARK: - Predicted touches
         if usePredictedTouches {
-            for touch in predictedTouches {
-                var location = touch.location(in: self)
-                location.y = bounds.size.height - location.y
-                points.append(location)
+           
+            if let predictedTouches: [UITouch] = event.predictedTouches(for: touch) {
+                
+                for touch in predictedTouches {
+                    var location = touch.location(in: self)
+                    location.y = bounds.size.height - location.y
+                    points.append(location)
+                }
             }
         }
         
-        // Render the stroke
- 
-        //self.renderLineBezier(points: points)
+        // MARK: - Render the stroke
         self.renderLine(points: points)
-
-        // store last point
-        //points.removeFirst()
-
-        // empty all
-        //points.removeAll(keepingCapacity: true)
-        
-        // add stored last point
-//        points.append(point)
-        
     }
 
     // MARK: - ENDED
