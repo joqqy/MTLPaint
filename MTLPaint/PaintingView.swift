@@ -465,9 +465,8 @@ class PaintingView: UIView {
         
         /**
          Note that coalesced points are not guaranteed to be added in serial order
-         And so for interpolated splines, we cannot use coalsced if we havent solved the weird ordering of the coalesced points!
+         And so for interpolated splines, we cannot use coalsced if we havent solved the weird ordering of the coalesced points! Same likely goes for predicted
          */
-                
         // MARK: - Coalesced touches
         if useCoalescedTouches {
             
