@@ -385,8 +385,8 @@ class PaintingView: UIView {
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
                                                        (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
                 
-                for i in 0 ..< spacingCount {
-                    vertexBuffer2.append(p0 + (p1 - p0) * (i.f / spacingCount.f))
+                for n in 0 ..< spacingCount {
+                    vertexBuffer2.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
             
