@@ -57,15 +57,16 @@ struct TextureInfo {
 class PaintingView: UIView {
     
     // MARK: - CONSTANTS:
-    let kBrushOpacity = (1.0 / 50.0)
-    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points
-    let kBrushScale = 1.0
+    let kBrushOpacity = (1.0 / 1.0)
+    let kBrushPixelStep = 14.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushScale = 14.0
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
     
     var useCoalescedTouches: Bool = false // :false
     var usePredictedTouches: Bool = false // :false
+    var coalescedCount: Int = 0
     
     
     // MARK: - The pixel dimensions of the backbuffer
@@ -364,9 +365,22 @@ class PaintingView: UIView {
                 alpha: 0.5)
             vertexBuffer = self.extractPoints_fromUIBezierPath_f2(curve)!
             //-------------------
-            if self.points.count > self.interpolation.rawValue {
-                self.points.removeFirst()
+            if self.useCoalescedTouches {
+                
+//                if self.points.count > self.coalescedCount {
+//                    //self.points.removeFirst(self.coalescedCount)
+//                    self.points.removeAll(keepingCapacity: true)
+//                }
+                
+                self.points.removeAll(keepingCapacity: true)
+                
+            } else {
+                
+                if self.points.count > self.interpolation.rawValue {
+                    self.points.removeFirst()
+                }
             }
+            
             //-------------------
         }
         
@@ -473,11 +487,25 @@ class PaintingView: UIView {
             if let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch) {
                 //debug
                 print("coalesced: \(coalescedTouches.count)")
+                self.coalescedCount = coalescedTouches.count
                 
                 for touch in coalescedTouches {
-                    var location = touch.location(in: self)
-                    location.y = bounds.size.height - location.y
-                    points.append(location)
+                    
+                    if self.useCoalescedTouches {
+                        
+                        var prevLocation = touch.previousLocation(in: self)
+                        prevLocation.y = bounds.size.height - prevLocation.y
+                        var location = touch.location(in: self)
+                        location.y = bounds.size.height - location.y
+                        if (prevLocation - location).quadrance > 0.003 {
+                            points.append(location)
+                        }
+                        
+                    } else {
+                        var location = touch.location(in: self)
+                        location.y = bounds.size.height - location.y
+                        points.append(location)
+                    }
                 }
             }
         }
