@@ -432,9 +432,11 @@ class PaintingView: UIView {
             
         } else {
             
-            // MARK: - Create the mtlbuffer
+            /// Get the count of the array for the final points
             newCount = arrCoalescedPoints.count
+            //debug
             print("newCount: \(newCount)")
+            // MARK: - Create the mtlbuffer
             if newCount > 0 {
                 self.vertBuffer = metalDevice.makeBuffer(bytes: &arrCoalescedPoints, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
             }
