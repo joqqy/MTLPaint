@@ -8,6 +8,7 @@
 
 import UIKit
 import MetalKit
+import SwiftSimplify
 
 enum LoadAction {
     case load
@@ -64,10 +65,11 @@ class PaintingView: UIView {
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
     
-    var useCoalescedTouches: Bool = true // :false
+    var useCoalescedTouches: Bool = false // :false
     var usePredictedTouches: Bool = false // :false
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
+    var simplify: Bool = true
     
     
     // MARK: - The pixel dimensions of the backbuffer
@@ -356,6 +358,7 @@ class PaintingView: UIView {
         case .hermite:
             
             guard coalescedPoints.count > self.interpolation.rawValue else { return }
+            
             guard let curve = INTERP.interpolateCGPointsWithHermite(
             pointsAsNSValues: coalescedPoints,
             closed: false) else {
@@ -370,25 +373,62 @@ class PaintingView: UIView {
             
         case .catmullRom:
             
-            // MARK: - curve coalesced
-            guard coalescedPoints.count > self.interpolation.rawValue else { return }
+            //--------------------------------------------------------------
+            // MARK: - Guard check the [CGPoint] array collected from touch
+            //--------------------------------------------------------------
+            guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+            
+            
+            //--------------------------------------------------------------
+            // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
+            //--------------------------------------------------------------
+            
+            
+            //------------
+            // v1
+//            // MARK: SimplifySwift simplify
+//            let hQ: Bool = true
+//            // MARK: Simplify (note this has simplification, v1 does not)
+//            let coalescedPoints: [CGPoint] = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
+            
             guard let curve: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
                 pointsAsNSValues: coalescedPoints,
                 closed: false,
                 alpha: 0.5) else {
-                
                 return ()
             }
             
-            // MARK: - Smoothen
+            //------------
+            // v2 (SimplifySwift)
+            /*
+            // MARK: SimplifySwift simplify
+            let hQ: Bool = true
+            // MARK: Simplify (note this has simplification, v1 does not)
+            let coalescedPoints: [CGPoint] = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
+            // MARK: Smoothen
+            let curve: UIBezierPath = UIBezierPath.smoothFromPoints(coalescedPoints)
+            */
+            
+            //------------
+            // v3 (Erica Sadun)
+            /*
+            //--------------------------------------------------------------
+            // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
             if smoothCurve {
+                /// smoothen
                 curve.smoothened(granularity: 1) // smoothen test
             }
+            */
             
+            //--------------------------------------------------------------
             // MARK: - extract points from curve/spline
+            //--------------------------------------------------------------
             arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(curve)!
             
+            
+            //--------------------------------------------------------------
             // MARK: - trim
+            //--------------------------------------------------------------
             if self.useCoalescedTouches {
                 //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
                 self.coalescedPoints.removeAll()
@@ -400,11 +440,14 @@ class PaintingView: UIView {
             }
         }
         
-        // MARK: - Interpolate between extracted points
+        //--------------------------------------------------------------
+        // MARK: - Linear interpolate between extracted points
+        //--------------------------------------------------------------
         var newCount: Int = 0
         if interpolateBetweenPoints {
 
             var coalescedInterpolated: [SIMD2<Float>] = []
+            
             for i in 0 ..< arrCoalescedPoints.count-1 {
                 
                 // MARK: - get the pair of points to interpolate between
@@ -420,6 +463,7 @@ class PaintingView: UIView {
                     coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
+            
             
             /// Get the count of the array for the final points
             newCount = coalescedInterpolated.count
@@ -496,7 +540,7 @@ class PaintingView: UIView {
         // MARK: - Regular touches
         var location = touch.preciseLocation(in: self)
         location.y = bounds.size.height - location.y
-        points.append(location)
+        coalescedPoints.append(location)
         
         /**
          Note that coalesced points are not guaranteed to be added in serial order
