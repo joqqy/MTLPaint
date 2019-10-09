@@ -58,8 +58,8 @@ class PaintingView: UIView {
     
     // MARK: - CONSTANTS:
     let kBrushOpacity = (1.0 / 1.0)
-    let kBrushPixelStep = 14.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 14.0
+    let kBrushPixelStep = 25.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushScale = 20.0
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
@@ -362,17 +362,17 @@ class PaintingView: UIView {
                 return ()
             }
             arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(curve)!
-            //-------------------
+            
+            // MARK: trim
             if self.coalescedPoints.count > self.interpolation.rawValue {
                 self.coalescedPoints.removeFirst()
             }
-            //-------------------
             
         case .catmullRom:
             
-            // MARK: curve coalesced
+            // MARK: - curve coalesced
             guard coalescedPoints.count > self.interpolation.rawValue else { return }
-            guard let curve = INTERP.interpolateCGPointsWithCatmullRom(
+            guard let curve: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
                 pointsAsNSValues: coalescedPoints,
                 closed: false,
                 alpha: 0.5) else {
@@ -380,29 +380,30 @@ class PaintingView: UIView {
                 return ()
             }
             
+            // MARK: - Smoothen
             if smoothCurve {
                 curve.smoothened(granularity: 1) // smoothen test
             }
+            
+            // MARK: - extract points from curve/spline
             arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(curve)!
-            //-------------------
+            
+            // MARK: - trim
             if self.useCoalescedTouches {
+                //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
+                self.coalescedPoints.removeAll()
                 
-                self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
-       
             } else {
-                
-                if self.coalescedPoints.count > self.interpolation.rawValue {
-                    self.coalescedPoints.removeFirst()
+                if self.points.count > self.interpolation.rawValue {
+                    self.points.removeFirst()
                 }
             }
-            //-------------------
         }
         
+        // MARK: - Interpolate between extracted points
         var newCount: Int = 0
-        
         if interpolateBetweenPoints {
-            
-            // Interpolate between bezier curve points
+
             var vertexBuffer2: [SIMD2<Float>] = []
             for i in 0 ..< arrCoalescedPoints.count-1 {
                 
@@ -418,7 +419,7 @@ class PaintingView: UIView {
                 }
             }
             
-            // Create the mtlbuffer
+            // MARK: - Create the mtlbuffer
             newCount = vertexBuffer2.count
             print("newCount: \(newCount)")
             if newCount > 0 {
@@ -427,7 +428,7 @@ class PaintingView: UIView {
             
         } else {
             
-            // Create the mtlbuffer
+            // MARK: - Create the mtlbuffer
             newCount = arrCoalescedPoints.count
             print("newCount: \(newCount)")
             if newCount > 0 {
@@ -505,9 +506,9 @@ class PaintingView: UIView {
                 
                 for cTouch in coalescedTouches {
                     
-                    if touch.timestamp < cTouch.timestamp {
-                        coalescedPoints.append(location)
-                    }
+//                    if touch.timestamp < cTouch.timestamp {
+//                        coalescedPoints.append(location)
+//                    }
                     
                     if self.useCoalescedTouches {
                         
@@ -554,19 +555,18 @@ class PaintingView: UIView {
     // MARK: - ENDED
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        let bounds = self.bounds
-        let touch = event!.touches(for: self)!.first!
-
-        var location = touch.preciseLocation(in: self)
-        location.y = bounds.size.height - location.y
-        self.coalescedPoints.append(location)
-        
+//        let bounds = self.bounds
+//        let touch = event!.touches(for: self)!.first!
+//
+//        var location = touch.preciseLocation(in: self)
+//        location.y = bounds.size.height - location.y
+//        self.coalescedPoints.append(location)
+//
 //        self.renderLine(points: self.points,
 //                        coalescedPoints: self.coalescedPoints,
 //                        predictedPoints: self.predictedPoints)
 
         coalescedPoints.removeAll(keepingCapacity: true)
-
     }
 
     // MARK: - CANCELLED
