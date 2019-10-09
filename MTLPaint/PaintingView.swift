@@ -404,26 +404,30 @@ class PaintingView: UIView {
         var newCount: Int = 0
         if interpolateBetweenPoints {
 
-            var vertexBuffer2: [SIMD2<Float>] = []
+            var coalescedInterpolated: [SIMD2<Float>] = []
             for i in 0 ..< arrCoalescedPoints.count-1 {
                 
+                // MARK: - get the pair of points to interpolate between
                 let p0 = arrCoalescedPoints[i]
                 let p1 = arrCoalescedPoints[i+1]
                 
-                // MARK: - Add points to the buffer so there are drawing points every X pixels
+                // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
                                                        (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
                 
+                // MARK: - calculate position shift between the two points and append to the array
                 for n in 0 ..< spacingCount {
-                    vertexBuffer2.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
+                    coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
             
-            // MARK: - Create the mtlbuffer
-            newCount = vertexBuffer2.count
+            /// Get the count of the array for the final points
+            newCount = coalescedInterpolated.count
+            //debug
             print("newCount: \(newCount)")
+            // MARK: - Create the mtlbuffer
             if newCount > 0 {
-                self.vertBuffer = metalDevice.makeBuffer(bytes: &vertexBuffer2, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+                self.vertBuffer = metalDevice.makeBuffer(bytes: &coalescedInterpolated, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
             }
             
         } else {
