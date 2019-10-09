@@ -59,7 +59,7 @@ class PaintingView: UIView {
     
     // MARK: - CONSTANTS:
     let kBrushOpacity = (1.0 / 1.0)
-    let kBrushPixelStep = 25.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
     let kBrushScale = 20.0
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
@@ -376,18 +376,20 @@ class PaintingView: UIView {
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
-            //guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
-            
+            guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+
             
             //--------------------------------------------------------------
             // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
             //--------------------------------------------------------------
-            
+            // local copy the global points
+            let simplifiedPoints = self.coalescedPoints
+                        
             
             //------------
             // v1
             guard let simplifiedPath: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
-                pointsAsNSValues: self.coalescedPoints,
+                pointsAsNSValues: simplifiedPoints,
                 closed: false,
                 alpha: 0.5) else {
                 return ()
@@ -413,7 +415,6 @@ class PaintingView: UIView {
 //                /// smoothen
 //                simplifiedPath.smoothened(granularity: 1) // smoothen test
 //            }
-            
             
             //--------------------------------------------------------------
             // MARK: - extract points from curve/spline
