@@ -243,8 +243,8 @@ extension UIBezierPath {
         allPoints.insert(allPoints.first!, at: 0)
         allPoints.append(allPoints.last!)
         
-        let smoothened: UIBezierPath = bezier ?? (copy() as! UIBezierPath)
-        smoothened.removeAllPoints()
+        let smoothened: UIBezierPath = UIBezierPath() // bezier ?? (copy() as! UIBezierPath)
+        //smoothened.removeAllPoints()
         
         for i in (4 ..< allPoints.count) {
             let p0: CGPoint = allPoints[i - 3]
