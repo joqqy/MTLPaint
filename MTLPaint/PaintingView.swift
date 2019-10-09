@@ -376,7 +376,7 @@ class PaintingView: UIView {
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
-            guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+            //guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
             
             
             //--------------------------------------------------------------
@@ -386,44 +386,39 @@ class PaintingView: UIView {
             
             //------------
             // v1
-//            // MARK: SimplifySwift simplify
-//            let hQ: Bool = true
-//            // MARK: Simplify (note this has simplification, v1 does not)
-//            let coalescedPoints: [CGPoint] = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
-            
-            guard let curve: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
-                pointsAsNSValues: coalescedPoints,
+            guard let simplifiedPath: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
+                pointsAsNSValues: self.coalescedPoints,
                 closed: false,
                 alpha: 0.5) else {
                 return ()
             }
             
-            //------------
-            // v2 (SimplifySwift)
-            /*
-            // MARK: SimplifySwift simplify
-            let hQ: Bool = true
-            // MARK: Simplify (note this has simplification, v1 does not)
-            let coalescedPoints: [CGPoint] = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
-            // MARK: Smoothen
-            let curve: UIBezierPath = UIBezierPath.smoothFromPoints(coalescedPoints)
-            */
+//            //------------
+//            // v2 (SimplifySwift)
+//            // MARK: SimplifySwift simplify
+//            let hQ: Bool = true
+//            // MARK: Simplify (note this has simplification, v1 does not)
+//            /// - Parameter tolerance: the higher the blocker and less points (default is 1)
+//            /// - Returns: [CGPoints] Array
+//            let simplifiedPoints = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
+//            // MARK: Smoothen
+//            let simplifiedPath: UIBezierPath = UIBezierPath.smoothFromPoints(simplifiedPoints)
             
-            //------------
-            // v3 (Erica Sadun)
-            /*
-            //--------------------------------------------------------------
-            // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
-            if smoothCurve {
-                /// smoothen
-                curve.smoothened(granularity: 1) // smoothen test
-            }
-            */
+            
+//            //------------
+//            // v3 (Erica Sadun)
+//            //--------------------------------------------------------------
+//            // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
+//            if smoothCurve {
+//                /// smoothen
+//                simplifiedPath.smoothened(granularity: 1) // smoothen test
+//            }
+            
             
             //--------------------------------------------------------------
             // MARK: - extract points from curve/spline
             //--------------------------------------------------------------
-            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(curve)!
+            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
             
             
             //--------------------------------------------------------------
@@ -434,8 +429,8 @@ class PaintingView: UIView {
                 self.coalescedPoints.removeAll()
                 
             } else {
-                if self.points.count > self.interpolation.rawValue {
-                    self.points.removeFirst()
+                if self.coalescedPoints.count > self.interpolation.rawValue {
+                    self.coalescedPoints.removeFirst()
                 }
             }
         }
@@ -615,8 +610,8 @@ class PaintingView: UIView {
 //        self.renderLine(points: self.points,
 //                        coalescedPoints: self.coalescedPoints,
 //                        predictedPoints: self.predictedPoints)
-
-        coalescedPoints.removeAll(keepingCapacity: true)
+//
+//        coalescedPoints.removeAll(keepingCapacity: true)
     }
 
     // MARK: - CANCELLED
