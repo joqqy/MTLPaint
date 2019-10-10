@@ -54,7 +54,13 @@ struct TextureInfo {
 }
 
 
-class PaintingView: UIView {
+class PaintingView: MTKView {
+    
+    private var metalDevice: MTLDevice = MTLCreateSystemDefaultDevice()!
+    private var metalCommandQueue: MTLCommandQueue?
+    private var viewport: MTLViewport!
+    private var renderTargetTexture: MTLTexture!
+
     
     // MARK: - CONSTANTS:
     let kBrushOpacity = (1.0 / 1.0)
@@ -75,19 +81,11 @@ class PaintingView: UIView {
 
     private var backingWidth: Int = 0
     private var backingHeight: Int = 0
-
-    private var metalDevice: MTLDevice
-    private var metalCommandQueue: MTLCommandQueue
-
-    private var renderTargetTexture: MTLTexture!
-
+    
     private var brushTexture: TextureInfo! // brush texture
     private var brushColor: [Float] = [0, 0, 0, 0] // brush color
 
     private var needsErase: Bool = false
-
-    // Viewport
-    private var viewport: MTLViewport!
 
     private var initialized: Bool = false
 
@@ -101,30 +99,22 @@ class PaintingView: UIView {
     var vertBuffer: MTLBuffer? = nil
 
     // Implement this to override the default layer class (which is [CALayer class]).
-    // We do this so that our view will be backed by a layer that is capable of OpenGL ES rendering.
+    // We do this so that our view will be backed by a layer that is capable of Metal rendering.
     override class var layerClass : AnyClass {
         return CAMetalLayer.self
     }
 
     // The GL view is stored in the nib file. When it's unarchived it's sent -initWithCoder:
-    required init?(coder: NSCoder) {
-        guard
-            let metalDevice = MTLCreateSystemDefaultDevice(),
-            let metalCommandQueue = metalDevice.makeCommandQueue()
-        else {
-            fatalError("Metal is unavalable")
-        }
-        self.metalDevice = metalDevice
-        self.metalCommandQueue = metalCommandQueue
-
+    required init(coder: NSCoder) {
+        
         super.init(coder: coder)
+        
+        self.device = metalDevice
+        self.metalCommandQueue = self.device?.makeCommandQueue()
         
         let metalLayer = self.layer as! CAMetalLayer
         metalLayer.framebufferOnly = false
-
-        //eaglLayer.isOpaque = true
         metalLayer.isOpaque = true
-
         metalLayer.pixelFormat = .bgra8Unorm
 
         // Set the view's scale factor as you wish
@@ -132,7 +122,6 @@ class PaintingView: UIView {
 
         // Make sure to start with a cleared buffer
         needsErase = true
-
     }
 
     // If our view is resized, we'll be asked to layout subviews.
@@ -312,7 +301,7 @@ class PaintingView: UIView {
         }
         attachment.storeAction = .store
 
-        guard let commandBuffer = metalCommandQueue.makeCommandBuffer() else {
+        guard let commandBuffer = metalCommandQueue?.makeCommandBuffer() else {
             return
         }
         
@@ -321,16 +310,30 @@ class PaintingView: UIView {
         }
 
         drawing(renderEncoder)
-        
         renderEncoder.endEncoding()
         
-        // MARK: - Display the buffer
-        //### Copy render target to drawable
+        
+        
+        // MARK: - Blit render target to drawable
         let blit = commandBuffer.makeBlitCommandEncoder()!
-        let sourceSize = MTLSize(width: drawable.texture.width, height: drawable.texture.height, depth: 1)
-        blit.copy(from: renderTargetTexture, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0), sourceSize: sourceSize, to: drawable.texture, destinationSlice: 0, destinationLevel: 0, destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
+        
+        let sourceSize = MTLSize(width: drawable.texture.width,
+                                 height: drawable.texture.height,
+                                 depth: 1)
+        
+        blit.copy(from: renderTargetTexture,
+                  sourceSlice: 0,
+                  sourceLevel: 0,
+                  sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                  sourceSize: sourceSize,
+                  to: drawable.texture,
+                  destinationSlice: 0,
+                  destinationLevel: 0,
+                  destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
         blit.endEncoding()
        
+        
+        // MARK: - Commit and Display the buffer
         commandBuffer.present(drawable)
         commandBuffer.commit()
         

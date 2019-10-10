@@ -30,11 +30,13 @@ extension Notification.Name {
 //CLASS IMPLEMENTATIONS:
 
 class PaintingViewController: UIViewController {
+    
     private var erasingSound: SoundEffect!
     private var selectSound: SoundEffect!
     private var lastTime: CFTimeInterval = 0
 
     override func viewDidLoad() {
+        
         super.viewDidLoad()
 
         // Create a segmented control so that the user can choose the brush color.
@@ -70,8 +72,9 @@ class PaintingViewController: UIViewController {
             alpha: 1.0).cgColor
         if let components = color.components {
 
-        // Defer to the OpenGL view to set the brush color
+        // Defer to the MTKView view to set the brush color
             (self.view as! PaintingView).setBrushColor(red: components[0], green: components[1], blue: components[2])
+            
         } else {
             print("CGColor.components unavailable")
         }
@@ -87,6 +90,7 @@ class PaintingViewController: UIViewController {
     }
 
     override func viewDidAppear(_ animated: Bool) {
+        
         super.viewDidAppear(animated)
         self.becomeFirstResponder()
     }
