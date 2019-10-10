@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D08FE7C234F2E7000097D7B /* Point2DRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */; };
+		1D08FE7D234F2E7000097D7B /* UIBezierPath+CGPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */; };
+		1D08FE7E234F2E7000097D7B /* SwiftSimplify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */; };
 		1D721962234A9C46007FE2CF /* CGPointExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D721960234A9C45007FE2CF /* CGPointExtension.m */; };
 		1D721977234A9CF0007FE2CF /* Array+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721964234A9CF0007FE2CF /* Array+Extensions.swift */; };
 		1D721978234A9CF0007FE2CF /* Int+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721965234A9CF0007FE2CF /* Int+Extensions.swift */; };
@@ -29,7 +32,6 @@
 		1D721989234A9CF0007FE2CF /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */; };
 		1D892791234BAD7800694852 /* Particle2.png in Resources */ = {isa = PBXBuildFile; fileRef = 1D892790234BAD7700694852 /* Particle2.png */; };
 		1DE91C12234DCF3C0089B8FE /* CGMathExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE91C11234DCF3C0089B8FE /* CGMathExtensions.swift */; };
-		9CF32BF52959F3ADADC03307 /* Pods_MTLPaint.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9D3179D8544654E60F46E02 /* Pods_MTLPaint.framework */; };
 		D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */; };
 		D7A0FDCA226D9EE900D53FA1 /* Purple.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC5226D9EE900D53FA1 /* Purple.png */; };
 		D7A0FDCB226D9EE900D53FA1 /* Yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = D7A0FDC6226D9EE900D53FA1 /* Yellow.png */; };
@@ -54,6 +56,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Point2DRepresentable.swift; sourceTree = "<group>"; };
+		1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIBezierPath+CGPoint.swift"; sourceTree = "<group>"; };
+		1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftSimplify.swift; sourceTree = "<group>"; };
 		1D72195F234A9C44007FE2CF /* MTLPaint-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MTLPaint-Bridging-Header.h"; sourceTree = "<group>"; };
 		1D721960234A9C45007FE2CF /* CGPointExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CGPointExtension.m; sourceTree = "<group>"; };
 		1D721961234A9C45007FE2CF /* CGPointExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CGPointExtension.h; sourceTree = "<group>"; };
@@ -78,9 +83,6 @@
 		1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
 		1D892790234BAD7700694852 /* Particle2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Particle2.png; sourceTree = "<group>"; };
 		1DE91C11234DCF3C0089B8FE /* CGMathExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CGMathExtensions.swift; sourceTree = "<group>"; };
-		49FE3E46E726AE948DE9200B /* Pods-MTLPaint.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTLPaint.debug.xcconfig"; path = "Target Support Files/Pods-MTLPaint/Pods-MTLPaint.debug.xcconfig"; sourceTree = "<group>"; };
-		A9D3179D8544654E60F46E02 /* Pods_MTLPaint.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MTLPaint.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		B82ABD9012F30633A982E6CC /* Pods-MTLPaint.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MTLPaint.release.xcconfig"; path = "Target Support Files/Pods-MTLPaint/Pods-MTLPaint.release.xcconfig"; sourceTree = "<group>"; };
 		D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Extensions.swift"; sourceTree = "<group>"; };
 		D7A0FDC5226D9EE900D53FA1 /* Purple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Purple.png; sourceTree = "<group>"; };
 		D7A0FDC6226D9EE900D53FA1 /* Yellow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Yellow.png; sourceTree = "<group>"; };
@@ -111,13 +113,22 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9CF32BF52959F3ADADC03307 /* Pods_MTLPaint.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1D08FE78234F2E7000097D7B /* SwiftSimplify */ = {
+			isa = PBXGroup;
+			children = (
+				1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */,
+				1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */,
+				1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */,
+			);
+			path = SwiftSimplify;
+			sourceTree = "<group>";
+		};
 		1D721963234A9CF0007FE2CF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -145,24 +156,6 @@
 				D7AACE362265C08700EB674A /* NumTypes+Conversion.swift */,
 			);
 			path = Extensions;
-			sourceTree = "<group>";
-		};
-		CDE9411A70CE6ACA8D260579 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				49FE3E46E726AE948DE9200B /* Pods-MTLPaint.debug.xcconfig */,
-				B82ABD9012F30633A982E6CC /* Pods-MTLPaint.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		CF7BBB8C02C0B65CDD751290 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				A9D3179D8544654E60F46E02 /* Pods_MTLPaint.framework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		D006DE9E234A1187009D0750 /* Bridge */ = {
@@ -207,6 +200,7 @@
 		D7AACE132265BE9B00EB674A = {
 			isa = PBXGroup;
 			children = (
+				1D08FE78234F2E7000097D7B /* SwiftSimplify */,
 				D006DE9E234A1187009D0750 /* Bridge */,
 				D7AACE312265BF1400EB674A /* ReadMe.md */,
 				D7AACE1E2265BE9B00EB674A /* MTLPaint */,
@@ -215,8 +209,6 @@
 				D7A8BA32226DE97F00C10FCB /* Shaders */,
 				D7A0FDC4226D9E9600D53FA1 /* Resources */,
 				D7AACE1D2265BE9B00EB674A /* Products */,
-				CDE9411A70CE6ACA8D260579 /* Pods */,
-				CF7BBB8C02C0B65CDD751290 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -254,11 +246,9 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D7AACE2E2265BE9C00EB674A /* Build configuration list for PBXNativeTarget "MTLPaint" */;
 			buildPhases = (
-				2E7C8E25E44681F5584FC8A3 /* [CP] Check Pods Manifest.lock */,
 				D7AACE182265BE9B00EB674A /* Sources */,
 				D7AACE192265BE9B00EB674A /* Frameworks */,
 				D7AACE1A2265BE9B00EB674A /* Resources */,
-				9A9DE3D1FCA31FE0F9C8EC32 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -327,48 +317,6 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		2E7C8E25E44681F5584FC8A3 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-MTLPaint-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		9A9DE3D1FCA31FE0F9C8EC32 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-MTLPaint/Pods-MTLPaint-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-MTLPaint/Pods-MTLPaint-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MTLPaint/Pods-MTLPaint-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		D7AACE182265BE9B00EB674A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -379,7 +327,10 @@
 				1D721979234A9CF0007FE2CF /* float3x3+Extensions.swift in Sources */,
 				1D721984234A9CF0007FE2CF /* matrix_utilities.swift in Sources */,
 				1D721980234A9CF0007FE2CF /* matrix_float2x3+Extensions.swift in Sources */,
+				1D08FE7C234F2E7000097D7B /* Point2DRepresentable.swift in Sources */,
+				1D08FE7D234F2E7000097D7B /* UIBezierPath+CGPoint.swift in Sources */,
 				1D721988234A9CF0007FE2CF /* Double+Extensions.swift in Sources */,
+				1D08FE7E234F2E7000097D7B /* SwiftSimplify.swift in Sources */,
 				1D721977234A9CF0007FE2CF /* Array+Extensions.swift in Sources */,
 				1D721982234A9CF0007FE2CF /* float2x3+Extensions.swift in Sources */,
 				D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */,
@@ -548,7 +499,6 @@
 		};
 		D7AACE2F2265BE9C00EB674A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 49FE3E46E726AE948DE9200B /* Pods-MTLPaint.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -570,7 +520,6 @@
 		};
 		D7AACE302265BE9C00EB674A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B82ABD9012F30633A982E6CC /* Pods-MTLPaint.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

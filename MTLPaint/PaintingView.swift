@@ -8,7 +8,6 @@
 
 import UIKit
 import MetalKit
-import SwiftSimplify
 
 enum LoadAction {
     case load
@@ -85,7 +84,6 @@ class PaintingView: UIView {
     private var brushTexture: TextureInfo! // brush texture
     private var brushColor: [Float] = [0, 0, 0, 0] // brush color
 
-    private var firstTouch: Bool = false
     private var needsErase: Bool = false
 
     // Viewport
@@ -120,15 +118,13 @@ class PaintingView: UIView {
         self.metalCommandQueue = metalCommandQueue
 
         super.init(coder: coder)
-        //let eaglLayer = self.layer as! CAEAGLLayer
+        
         let metalLayer = self.layer as! CAMetalLayer
         metalLayer.framebufferOnly = false
 
         //eaglLayer.isOpaque = true
         metalLayer.isOpaque = true
-        
-        //### No simple ways to simulate `kEAGLDrawablePropertyRetainedBacking: true`
-        //### See codes marked as [kEAGLDrawablePropertyRetainedBacking]
+
         metalLayer.pixelFormat = .bgra8Unorm
 
         // Set the view's scale factor as you wish
@@ -182,10 +178,10 @@ class PaintingView: UIView {
 
             program[i].pipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
 
-            // Set constant/initalize uniforms
+            // MARK: - Set constant/initalize uniforms
             if i == PROGRAM_POINT {
 
-                // viewing matrices
+                // MARK: - viewing matrices
                 print(backingWidth, backingHeight)
                 let projectionMatrix = float4x4.orthoLeftHand(0, backingWidth.f, 0, backingHeight.f, -1, 1)
                 let modelViewMatrix = float4x4.identity
@@ -193,11 +189,11 @@ class PaintingView: UIView {
 
                 let uniformMVP = metalDevice.makeBuffer(bytes: &MVPMatrix, length: MemoryLayout<float4x4>.size)
                 
-                // point size
+                // MARK: - point size
                 var pointSize = (brushTexture.texture?.width.f ?? 0) / kBrushScale.f
                 let uniformPointSize = metalDevice.makeBuffer(bytes: &pointSize, length: MemoryLayout<Float>.size)
 
-                // initialize brush color
+                // MARK: - initialize brush color
                 let uniformVertexColor = metalDevice.makeBuffer(bytes: brushColor, length: MemoryLayout<Float>.size * brushColor.count)
                 
                 program[i].uniform = [uniformMVP, uniformPointSize, uniformVertexColor]
@@ -346,7 +342,7 @@ class PaintingView: UIView {
                             coalescedPoints: [CGPoint],
                             predictedPoints: [CGPoint]) {
         
-        // MARK: - Allocate vertex array buffer
+        // MARK: - Allocate vertex array buffer for GPU
         var arrPoints: [SIMD2<Float>] = []
         var arrCoalescedPoints: [SIMD2<Float>] = []
         var arrPredictedPoints: [SIMD2<Float>] = []
@@ -395,6 +391,11 @@ class PaintingView: UIView {
                 return ()
             }
             
+            /**
+             So I believe this only works for curves whose points are known ahead of time and do not change!
+             We get weird funky chaos, and I believe it is because we are drawing continuously.
+             If so, then this library SimplifySwift will not do or cut it for us
+             */
 //            //------------
 //            // v2 (SimplifySwift)
 //            // MARK: SimplifySwift simplify
