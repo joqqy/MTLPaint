@@ -63,14 +63,14 @@ class PaintingView: MTKView {
 
     
     // MARK: - CONSTANTS:
-    let kBrushOpacity = (1.0 / 1.0)
+    let kBrushOpacity = (1.0 / 50.0)
     let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 20.0
+    let kBrushScale = 1.0
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
     private var interpolateBetweenPoints: Bool = true // :true
     
-    var useCoalescedTouches: Bool = false // :false
+    var useCoalescedTouches: Bool = true // :false
     var usePredictedTouches: Bool = false // :false
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
@@ -446,15 +446,17 @@ class PaintingView: MTKView {
             // MARK: - trim
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
-                //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
-                self.coalescedPoints.removeAll()
-                print("(if n it works?) catmull remaining: \(self.coalescedPoints.count)")
+                
+                // This works
+                if self.coalescedPoints.count >= 4 {
+                    self.coalescedPoints.removeFirst(4)
+                }
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
                     self.coalescedPoints.removeFirst()
                     //debug
-                    print("(if 3 it works) catmull remaining: \(self.coalescedPoints.count)")
+                    //print("(if 3 it works) catmull remaining: \(self.coalescedPoints.count)")
                 }
             }
         }
