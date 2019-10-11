@@ -86,15 +86,13 @@ class PaintingView: MTKView {
     private var brushColor: [Float] = [0, 0, 0, 0] // brush color
 
     private var needsErase: Bool = false
-
     private var initialized: Bool = false
-
-    var location: CGPoint = CGPoint()
-    var previousLocation: CGPoint = CGPoint()
     
     var points: [CGPoint] = []
     var coalescedPoints: [CGPoint] = []
     var predictedPoints: [CGPoint] = []
+    
+    var prevLocation: CGPoint? = nil
     
     var vertBuffer: MTLBuffer? = nil
 
@@ -340,7 +338,7 @@ class PaintingView: MTKView {
     }
 
 
-    // MARK: - Drawings a line onscreen based on where the user touches
+    // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
                             coalescedPoints: [CGPoint],
                             predictedPoints: [CGPoint]) {
@@ -356,18 +354,38 @@ class PaintingView: MTKView {
         {
         case .hermite:
             
+            //--------------------------------------------------------------
+            // MARK: - Guard check the [CGPoint] array collected from touch
+            //--------------------------------------------------------------
             guard coalescedPoints.count > self.interpolation.rawValue else { return }
             
-            guard let curve = INTERP.interpolateCGPointsWithHermite(
-            pointsAsNSValues: coalescedPoints,
-            closed: false) else {
+            //--------------------------------------------------------------
+            // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
+            //--------------------------------------------------------------
+            // local copy the global points
+            let simplifiedPoints = self.coalescedPoints
+            
+            guard let simplifiedPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: simplifiedPoints, closed: false) else {
                 return ()
             }
-            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(curve)!
             
-            // MARK: trim
-            if self.coalescedPoints.count > self.interpolation.rawValue {
-                self.coalescedPoints.removeFirst()
+            //--------------------------------------------------------------
+            // MARK: - extract points from curve/spline
+            //--------------------------------------------------------------
+            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
+            
+            //--------------------------------------------------------------
+            // MARK: - trim
+            //--------------------------------------------------------------
+            if self.useCoalescedTouches {
+                //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
+                self.coalescedPoints.removeAll()
+                
+            } else {
+                if self.coalescedPoints.count > self.interpolation.rawValue {
+                    self.coalescedPoints.removeFirst()
+                    print("(if n it works) hermite remaining: \(self.coalescedPoints.count)")
+                }
             }
             
         case .catmullRom:
@@ -376,14 +394,12 @@ class PaintingView: MTKView {
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
             guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
-
             
             //--------------------------------------------------------------
             // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
             //--------------------------------------------------------------
             // local copy the global points
             let simplifiedPoints = self.coalescedPoints
-                        
             
             //------------
             // v1
@@ -432,16 +448,19 @@ class PaintingView: MTKView {
             if self.useCoalescedTouches {
                 //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
                 self.coalescedPoints.removeAll()
+                print("(if n it works?) catmull remaining: \(self.coalescedPoints.count)")
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
                     self.coalescedPoints.removeFirst()
+                    //debug
+                    print("(if 3 it works) catmull remaining: \(self.coalescedPoints.count)")
                 }
             }
         }
         
         //--------------------------------------------------------------
-        // MARK: - Linear interpolate between extracted points
+        // MARK: - Linearly interpolate between extracted points (fill points between final points, if distance is greater than kBrushPixelStep)
         //--------------------------------------------------------------
         var newCount: Int = 0
         if interpolateBetweenPoints {
@@ -458,12 +477,13 @@ class PaintingView: MTKView {
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
                                                        (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
                 
+                //self.lastdistance = spacingCount
+                
                 // MARK: - calculate position shift between the two points and append to the array
                 for n in 0 ..< spacingCount {
                     coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
-            
             
             /// Get the count of the array for the final points
             newCount = coalescedInterpolated.count
@@ -537,10 +557,12 @@ class PaintingView: MTKView {
         
         let bounds: CGRect = self.bounds
         
-        // MARK: - Regular touches
-        var location = touch.preciseLocation(in: self)
-        location.y = bounds.size.height - location.y
-        coalescedPoints.append(location)
+        if !useCoalescedTouches {
+            // MARK: - Regular touches
+            var location = touch.preciseLocation(in: self)
+            location.y = bounds.size.height - location.y
+            coalescedPoints.append(location)
+        }
         
         /**
          Note that coalesced points are not guaranteed to be added in serial order
@@ -548,44 +570,21 @@ class PaintingView: MTKView {
          */
         // MARK: - Coalesced touches
         if useCoalescedTouches {
-            
             if let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch) {
+                
                 //debug
                 print("coalesced: \(coalescedTouches.count)")
-                self.coalescedCount = coalescedTouches.count
                 
                 for cTouch in coalescedTouches {
-                    
-//                    if touch.timestamp < cTouch.timestamp {
-//                        coalescedPoints.append(location)
-//                    }
-                    
-                    if self.useCoalescedTouches {
-                        
-//                        var prevLocation = cTouch.previousLocation(in: self)
-//                        prevLocation.y = bounds.size.height - prevLocation.y
-                        
-                        
-                        
-                        var cLocation = cTouch.preciseLocation(in: self)
-                        cLocation.y = bounds.size.height - cLocation.y
-                        
-//                        if (prevLocation - location).quadrance > 0.003 {
-                            coalescedPoints.append(cLocation)
-//                        }
-                        
-                    } else {
-                        var location = cTouch.previousLocation(in: self)
-                        location.y = bounds.size.height - location.y
-                        coalescedPoints.append(location)
-                    }
+                    var cLocation = cTouch.preciseLocation(in: self)
+                    cLocation.y = bounds.size.height - cLocation.y
+                    coalescedPoints.append(cLocation)
                 }
             }
         }
         
         // MARK: - Predicted touches
         if usePredictedTouches {
-           
             if let predictedTouches: [UITouch] = event.predictedTouches(for: touch) {
                 
                 for pTouch in predictedTouches {
@@ -595,7 +594,7 @@ class PaintingView: MTKView {
                 }
             }
         }
-        
+
         // MARK: - Render the stroke
         self.renderLine(points: self.points,
                         coalescedPoints: self.coalescedPoints,
@@ -617,14 +616,19 @@ class PaintingView: MTKView {
 //                        predictedPoints: self.predictedPoints)
 //
 //        coalescedPoints.removeAll(keepingCapacity: true)
+        
+        //self.prevLocation = nil
+
     }
 
     // MARK: - CANCELLED
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
+
         // If appropriate, add code necessary to save the state of the application.
         // This application is not saving state.
         coalescedPoints.removeAll(keepingCapacity: true)
+        
+        //self.prevLocation = nil
     }
     
     

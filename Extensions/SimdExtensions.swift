@@ -18,6 +18,8 @@ extension simd_float2 {
     static func ==(left: simd_float2, right: simd_float2) -> simd_int2 {
         return simd_int2(left.x == right.x ? -1: 0, left.y == right.y ? -1: 0)
     }
+    
+    public var cg: CGPoint { return CGPoint(x: self.x.d, y: self.y.d) }
 }
 
 extension simd_float3 {

@@ -30,6 +30,7 @@
 		1D721987234A9CF0007FE2CF /* Float+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721974234A9CF0007FE2CF /* Float+Extensions.swift */; };
 		1D721988234A9CF0007FE2CF /* Double+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721975234A9CF0007FE2CF /* Double+Extensions.swift */; };
 		1D721989234A9CF0007FE2CF /* CGFloat+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */; };
+		1D782763234FC561007D816B /* StrokeCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D782762234FC561007D816B /* StrokeCollection.swift */; };
 		1D892791234BAD7800694852 /* Particle2.png in Resources */ = {isa = PBXBuildFile; fileRef = 1D892790234BAD7700694852 /* Particle2.png */; };
 		1DE91C12234DCF3C0089B8FE /* CGMathExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE91C11234DCF3C0089B8FE /* CGMathExtensions.swift */; };
 		D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */; };
@@ -81,6 +82,7 @@
 		1D721974234A9CF0007FE2CF /* Float+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Float+Extensions.swift"; sourceTree = "<group>"; };
 		1D721975234A9CF0007FE2CF /* Double+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Double+Extensions.swift"; sourceTree = "<group>"; };
 		1D721976234A9CF0007FE2CF /* CGFloat+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CGFloat+Extensions.swift"; sourceTree = "<group>"; };
+		1D782762234FC561007D816B /* StrokeCollection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrokeCollection.swift; sourceTree = "<group>"; };
 		1D892790234BAD7700694852 /* Particle2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Particle2.png; sourceTree = "<group>"; };
 		1DE91C11234DCF3C0089B8FE /* CGMathExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CGMathExtensions.swift; sourceTree = "<group>"; };
 		D006DEB2234A24F3009D0750 /* Collection+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Extensions.swift"; sourceTree = "<group>"; };
@@ -158,6 +160,14 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
+		1D782761234FC546007D816B /* SpeedSketch */ = {
+			isa = PBXGroup;
+			children = (
+				1D782762234FC561007D816B /* StrokeCollection.swift */,
+			);
+			path = SpeedSketch;
+			sourceTree = "<group>";
+		};
 		D006DE9E234A1187009D0750 /* Bridge */ = {
 			isa = PBXGroup;
 			children = (
@@ -200,6 +210,7 @@
 		D7AACE132265BE9B00EB674A = {
 			isa = PBXGroup;
 			children = (
+				1D782761234FC546007D816B /* SpeedSketch */,
 				1D08FE78234F2E7000097D7B /* SwiftSimplify */,
 				D006DE9E234A1187009D0750 /* Bridge */,
 				D7AACE312265BF1400EB674A /* ReadMe.md */,
@@ -326,6 +337,7 @@
 				D7A8BA38226DF2B200C10FCB /* Shaders.metal in Sources */,
 				1D721979234A9CF0007FE2CF /* float3x3+Extensions.swift in Sources */,
 				1D721984234A9CF0007FE2CF /* matrix_utilities.swift in Sources */,
+				1D782763234FC561007D816B /* StrokeCollection.swift in Sources */,
 				1D721980234A9CF0007FE2CF /* matrix_float2x3+Extensions.swift in Sources */,
 				1D08FE7C234F2E7000097D7B /* Point2DRepresentable.swift in Sources */,
 				1D08FE7D234F2E7000097D7B /* UIBezierPath+CGPoint.swift in Sources */,
