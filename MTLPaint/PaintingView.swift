@@ -63,11 +63,11 @@ class PaintingView: MTKView {
 
     
     // MARK: - CONSTANTS:
-    let kBrushOpacity = (1.0 / 50.0)
+    let kBrushOpacity = (1.0 / 1.0)
     let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 1.0
+    let kBrushScale = 20.0
     
-    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom
+    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
     
     var useCoalescedTouches: Bool = true // :false
@@ -378,13 +378,15 @@ class PaintingView: MTKView {
             // MARK: - trim
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
-                //self.coalescedPoints.removeFirst(self.coalescedPoints.count/2)
-                self.coalescedPoints.removeAll()
+                if self.coalescedPoints.count >= self.interpolation.rawValue+1 {
+                    self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+                }
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
                     self.coalescedPoints.removeFirst()
-                    print("(if n it works) hermite remaining: \(self.coalescedPoints.count)")
+                    //debug
+                    //print("(if n it works) catmull remaining: \(self.coalescedPoints.count)")
                 }
             }
             
@@ -446,10 +448,9 @@ class PaintingView: MTKView {
             // MARK: - trim
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
-                
                 // This works
-                if self.coalescedPoints.count >= 4 {
-                    self.coalescedPoints.removeFirst(4)
+                if self.coalescedPoints.count >= self.interpolation.rawValue+1 {
+                    self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
                 }
                 
             } else {
@@ -538,61 +539,47 @@ class PaintingView: MTKView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
         coalescedPoints.removeAll(keepingCapacity: true)
-        
         let bounds = self.bounds
-        guard let touch: UITouch = touches.first else { return () }
-        
-        // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-        var location = touch.preciseLocation(in: self)
-        location.y = bounds.size.height - location.y
-        coalescedPoints.append(location)
-        
+
+        if let coalesced = event?.coalescedTouches(for: touches.first!) {
+            
+            for touch in coalesced {
+                
+                // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                var location = touch.preciseLocation(in: self)
+                location.y = bounds.size.height - location.y
+                coalescedPoints.append(location)
+            }
+        }
     }
     
     // MARK: - MOVED
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
-        guard let touch: UITouch = touches.first,
-            let event: UIEvent = event else {
-            return ()
-        }
+     
         
         let bounds: CGRect = self.bounds
         
-        if !useCoalescedTouches {
-            // MARK: - Regular touches
-            var location = touch.preciseLocation(in: self)
-            location.y = bounds.size.height - location.y
-            coalescedPoints.append(location)
-        }
-        
-        /**
-         Note that coalesced points are not guaranteed to be added in serial order
-         And so for interpolated splines, we cannot use coalsced if we havent solved the weird ordering of the coalesced points! Same likely goes for predicted
-         */
-        // MARK: - Coalesced touches
-        if useCoalescedTouches {
-            if let coalescedTouches: [UITouch] = event.coalescedTouches(for: touch) {
+        if let coalesced = event?.coalescedTouches(for: touches.first!) {
+            
+            for touch in coalesced {
                 
-                //debug
-                print("coalesced: \(coalescedTouches.count)")
-                
-                for cTouch in coalescedTouches {
-                    var cLocation = cTouch.preciseLocation(in: self)
-                    cLocation.y = bounds.size.height - cLocation.y
-                    coalescedPoints.append(cLocation)
-                }
+                // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                var location = touch.preciseLocation(in: self)
+                location.y = bounds.size.height - location.y
+                coalescedPoints.append(location)
             }
         }
         
         // MARK: - Predicted touches
         if usePredictedTouches {
-            if let predictedTouches: [UITouch] = event.predictedTouches(for: touch) {
+           if let coalesced = event?.predictedTouches(for: touches.first!) {
                 
-                for pTouch in predictedTouches {
-                    var location = pTouch.preciseLocation(in: self)
+                for touch in coalesced {
+                    
+                    // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                    var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
-                    predictedPoints.append(location)
+                    coalescedPoints.append(location)
                 }
             }
         }
@@ -606,31 +593,22 @@ class PaintingView: MTKView {
     // MARK: - ENDED
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-//        let bounds = self.bounds
-//        let touch = event!.touches(for: self)!.first!
-//
-//        var location = touch.preciseLocation(in: self)
-//        location.y = bounds.size.height - location.y
-//        self.coalescedPoints.append(location)
-//
-//        self.renderLine(points: self.points,
-//                        coalescedPoints: self.coalescedPoints,
-//                        predictedPoints: self.predictedPoints)
-//
-//        coalescedPoints.removeAll(keepingCapacity: true)
-        
-        //self.prevLocation = nil
+        if let coalesced = event?.coalescedTouches(for: touches.first!) {
+            
+            for touch in coalesced {
+                
+                // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                var location = touch.preciseLocation(in: self)
+                location.y = bounds.size.height - location.y
+                coalescedPoints.append(location)
+            }
+        }
 
     }
 
     // MARK: - CANCELLED
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-
-        // If appropriate, add code necessary to save the state of the application.
-        // This application is not saving state.
-        coalescedPoints.removeAll(keepingCapacity: true)
         
-        //self.prevLocation = nil
     }
     
     
