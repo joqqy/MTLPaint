@@ -70,7 +70,7 @@ class PaintingView: MTKView {
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
     
-    var useCoalescedTouches: Bool = true // :false
+    var useCoalescedTouches: Bool = false // :false
     var usePredictedTouches: Bool = false // :false
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
@@ -540,13 +540,26 @@ class PaintingView: MTKView {
         
         coalescedPoints.removeAll(keepingCapacity: true)
         let bounds = self.bounds
-
-        if let coalesced = event?.coalescedTouches(for: touches.first!) {
+        
+        if useCoalescedTouches {
             
-            for touch in coalesced {
+            if let coalesced = event?.coalescedTouches(for: touches.first!) {
+                
+                for touch in coalesced {
+                    
+                    // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                    var location = touch.preciseLocation(in: self)
+                    location.y = bounds.size.height - location.y
+                    coalescedPoints.append(location)
+                }
+            }
+            
+        } else {
+            
+            if let touch: UITouch = touches.first {
                 
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                var location = touch.preciseLocation(in: self)
+                var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 coalescedPoints.append(location)
             }
@@ -559,12 +572,25 @@ class PaintingView: MTKView {
         
         let bounds: CGRect = self.bounds
         
-        if let coalesced = event?.coalescedTouches(for: touches.first!) {
+       if useCoalescedTouches {
             
-            for touch in coalesced {
+            if let coalesced = event?.coalescedTouches(for: touches.first!) {
+                
+                for touch in coalesced {
+                    
+                    // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                    var location = touch.preciseLocation(in: self)
+                    location.y = bounds.size.height - location.y
+                    coalescedPoints.append(location)
+                }
+            }
+            
+        } else {
+            
+            if let touch: UITouch = touches.first {
                 
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                var location = touch.preciseLocation(in: self)
+                var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 coalescedPoints.append(location)
             }
