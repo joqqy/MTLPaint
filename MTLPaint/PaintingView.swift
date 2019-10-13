@@ -77,7 +77,7 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
     
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 10.0)
+    let kBrushOpacity = (1.0 / 5.0)
     let kBrushPixelStep = 3.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
     let kBrushScale = 5.0
     
@@ -86,11 +86,7 @@ class PaintingView: MTKView {
     
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-    private var interpolateBetweenPoints: Bool = false // :true
-    /// - Remark: :false, works
-    /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = false
-    private var eSpliningType: ESpliningType = .appleBezier
+   
 
     
     var coalescedCount: Int = 0
@@ -359,6 +355,12 @@ class PaintingView: MTKView {
     }
 
 
+    private var interpolateBetweenPoints: Bool = false // :true
+       /// - Remark: :false, works
+       /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
+    private var splinePoints: Bool = false
+    private var eSpliningType: ESpliningType = .appleBezier
+    
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
                             coalescedPoints: [CGPoint],
@@ -368,8 +370,6 @@ class PaintingView: MTKView {
         var arrPoints: [SIMD2<Float>] = []
         var arrCoalescedPoints: [SIMD2<Float>] = []
         var arrPredictedPoints: [SIMD2<Float>] = []
-
-        // Calculate bezier curve from touch points
 
         switch (self.interpolation)
         {
@@ -416,7 +416,9 @@ class PaintingView: MTKView {
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
-            guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+            if splinePoints {
+                guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+            }
             
             //--------------------------------------------------------------
             // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
@@ -471,7 +473,6 @@ class PaintingView: MTKView {
                 arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
                 
             } else {
-                self.coalescedPoints.removeFirst() // so that we do not get overlapping points
                 arrCoalescedPoints = self.coalescedPoints.map { $0.f2 * 2.0 }
             }
             
@@ -502,13 +503,15 @@ class PaintingView: MTKView {
             if self.useCoalescedTouches {
 
                 if splinePoints {
-                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
-                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
-                    }
+//                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
+//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+//                    }
+                    self.coalescedPoints.removeAll()
                     
                 } else {
                     // This works!
                     self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+                    //self.coalescedPoints.removeAll()
                 }
                 
             } else {
@@ -533,6 +536,8 @@ class PaintingView: MTKView {
                 let p0: SIMD2<Float> = arrCoalescedPoints[i]
                 let p1: SIMD2<Float> = arrCoalescedPoints[i+1]
                 
+                
+                
                 // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
                                                        (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
@@ -544,6 +549,8 @@ class PaintingView: MTKView {
                     coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
+            
+            
             
             /// Get the count of the array for the final points
             newCount = coalescedInterpolated.count
