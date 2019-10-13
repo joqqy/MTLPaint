@@ -70,16 +70,9 @@ class PaintingView: MTKView {
     private var viewport: MTLViewport!
     private var renderTargetTexture: MTLTexture!
 
-    
-    // MARK: - CONSTANTS:
-    
-    private var useCoalescedTouches: Bool = true // :false
-    private var usePredictedTouches: Bool = false // :false
-
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
     var simplify: Bool = true
-    
     
     // MARK: - The pixel dimensions of the backbuffer
 
@@ -347,16 +340,20 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
         
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 10.0)
+    let kBrushOpacity = (1.0 / 50.0)
     let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 5.0
+    let kBrushScale = 2.0
+    
+    // MARK: - CONSTANTS:
+    private var useCoalescedTouches: Bool = false // :false
+    private var usePredictedTouches: Bool = false // :false
 
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
-       /// - Remark: :false, works
-       /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = false
-    private var eSpliningType: ESpliningType = .appleQuad
+    /// - Remark: :false, works
+    /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
+    private var splinePoints: Bool = true
+    private var eSpliningType: ESpliningType = .appleCurve // :.appleCurve works (but not with interpolation between points though)
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -373,9 +370,7 @@ class PaintingView: MTKView {
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
-            if splinePoints {
-                guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
-            }
+            guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
             
             //--------------------------------------------------------------
             // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
@@ -411,7 +406,6 @@ class PaintingView: MTKView {
                         for i in 0 ..< touchPoints.count - 3 {
                                                
                             //if (touchPoints[i] - touchPoints[i+3]).quadrance > 0.003 {
-                                               
                                 strokePath?.move(to: touchPoints[i]) // start point
                                 strokePath?.addQuadCurve(to: touchPoints[i+2], controlPoint: touchPoints[i+1])
                             //}
@@ -488,8 +482,10 @@ class PaintingView: MTKView {
                     self.coalescedPoints.removeAll()
                     
                 } else {
+                    
                     if interpolateBetweenPoints {
                         self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+                        
                     } else {
                        self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
                     }
@@ -497,8 +493,7 @@ class PaintingView: MTKView {
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
-                    //self.coalescedPoints.removeFirst()
-                    self.coalescedPoints.removeAll()
+                    self.coalescedPoints.removeFirst(3) // .removeFirst(3) worked! with splining and interpolate between points
                 }
             }
         case .hermite:
@@ -622,9 +617,7 @@ class PaintingView: MTKView {
         if useCoalescedTouches {
             
             if let coalesced = event?.coalescedTouches(for: touches.first!) {
-                
                 for touch in coalesced {
-                    
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
@@ -633,9 +626,7 @@ class PaintingView: MTKView {
             }
             
         } else {
-            
             if let touch: UITouch = touches.first {
-                
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
@@ -651,11 +642,8 @@ class PaintingView: MTKView {
         let bounds: CGRect = self.bounds
         
        if useCoalescedTouches {
-            
             if let coalesced = event?.coalescedTouches(for: touches.first!) {
-                
                 for touch in coalesced {
-                    
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
@@ -664,9 +652,7 @@ class PaintingView: MTKView {
             }
             
         } else {
-            
             if let touch: UITouch = touches.first {
-                
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
@@ -677,9 +663,7 @@ class PaintingView: MTKView {
         // MARK: - Predicted touches
         if usePredictedTouches {
            if let coalesced = event?.predictedTouches(for: touches.first!) {
-                
                 for touch in coalesced {
-                    
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
