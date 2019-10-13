@@ -345,13 +345,13 @@ class PaintingView: MTKView {
     let kBrushScale = 3.0
     
     // MARK: - CONSTANTS:
-    private var useCoalescedTouches: Bool = true // :false
+    private var useCoalescedTouches: Bool = false // :false
     private var usePredictedTouches: Bool = false // :false
-    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
+    private var interpolation: EInterpolationMethod = .hermite // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
     /// - Remark: :false, works
     /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = false
+    private var splinePoints: Bool = false // :false
     private var eSpliningType: ESpliningType = .appleCurve // :.appleCurve works (but not with interpolation between points though)
     
     // MARK: - Draws a line onscreen based on where the user touches
@@ -512,7 +512,7 @@ class PaintingView: MTKView {
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
-                    self.coalescedPoints.removeFirst(3) // .removeFirst(3) worked! with splining and interpolate between points
+                    self.coalescedPoints.removeFirst(self.interpolation.rawValue) // .removeFirst(3) worked! with splining and interpolate between points
                 }
             }
         case .hermite:
@@ -541,15 +541,17 @@ class PaintingView: MTKView {
             // MARK: - trim
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
-                if self.coalescedPoints.count >= self.interpolation.rawValue+1 {
-                    self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+                
+                if !self.coalescedPoints.isEmpty {
+                    
+                    let lastPoint = self.coalescedPoints.last!
+                    // remake the array using the last point
+                    self.coalescedPoints = [lastPoint]
                 }
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
-                    self.coalescedPoints.removeFirst()
-                    //debug
-                    //print("(if n it works) catmull remaining: \(self.coalescedPoints.count)")
+                    self.coalescedPoints.removeFirst(self.interpolation.rawValue)
                 }
             }
         }
