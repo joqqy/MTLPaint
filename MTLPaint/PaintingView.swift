@@ -77,19 +77,19 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
     
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 100.0)
+    let kBrushOpacity = (1.0 / 10.0)
     let kBrushPixelStep = 3.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 2.0
+    let kBrushScale = 5.0
     
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-    private var interpolateBetweenPoints: Bool = true // :true
+    private var interpolateBetweenPoints: Bool = false // :true
     /// - Remark: :false, works
     /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = true
+    private var splinePoints: Bool = false
     private var eSpliningType: ESpliningType = .appleBezier
 
     
@@ -471,7 +471,7 @@ class PaintingView: MTKView {
                 arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
                 
             } else {
-                
+                self.coalescedPoints.removeFirst() // so that we do not get overlapping points
                 arrCoalescedPoints = self.coalescedPoints.map { $0.f2 * 2.0 }
             }
             
@@ -513,9 +513,8 @@ class PaintingView: MTKView {
                 
             } else {
                 if self.coalescedPoints.count > self.interpolation.rawValue {
-                    self.coalescedPoints.removeFirst()
-                    //debug
-                    //print("(if 3 it works) catmull remaining: \(self.coalescedPoints.count)")
+                    //self.coalescedPoints.removeFirst()
+                    self.coalescedPoints.removeAll()
                 }
             }
         }
