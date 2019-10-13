@@ -355,7 +355,7 @@ class PaintingView: MTKView {
     }
 
 
-    private var interpolateBetweenPoints: Bool = false // :true
+    private var interpolateBetweenPoints: Bool = true // :true
        /// - Remark: :false, works
        /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
     private var splinePoints: Bool = false
@@ -370,6 +370,8 @@ class PaintingView: MTKView {
         var arrPoints: [SIMD2<Float>] = []
         var arrCoalescedPoints: [SIMD2<Float>] = []
         var arrPredictedPoints: [SIMD2<Float>] = []
+        
+        var interpPoint = self.coalescedPoints.last!
 
         switch (self.interpolation)
         {
@@ -425,11 +427,8 @@ class PaintingView: MTKView {
             //--------------------------------------------------------------
             // local copy the global points
             let simplifiedPoints = self.coalescedPoints
-            
-            //------------
-            // v1
+
             if splinePoints {
-                
                 
                 var simplifiedPath: UIBezierPath = UIBezierPath()
 
@@ -510,8 +509,11 @@ class PaintingView: MTKView {
                     
                 } else {
                     // This works!
-                    self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
-                    //self.coalescedPoints.removeAll()
+                    if interpolateBetweenPoints {
+                        self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+                    } else {
+                       self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
+                    }
                 }
                 
             } else {
@@ -534,9 +536,7 @@ class PaintingView: MTKView {
                 
                 // MARK: - get the pair of points to interpolate between
                 let p0: SIMD2<Float> = arrCoalescedPoints[i]
-                let p1: SIMD2<Float> = arrCoalescedPoints[i+1]
-                
-                
+                var p1: SIMD2<Float> = arrCoalescedPoints[i+1]
                 
                 // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
@@ -549,6 +549,7 @@ class PaintingView: MTKView {
                     coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
                 }
             }
+            
             
             
             
