@@ -63,15 +63,26 @@ class PaintingView: MTKView {
 
     
     // MARK: - CONSTANTS:
-    let kBrushOpacity = (1.0 / 1.0)
+    
+    // Opaque dots
+//    let kBrushOpacity = (1.0 / 1.0)
+//    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+//    let kBrushScale = 20.0
+    
+    // bigger transparent brush
+    let kBrushOpacity = (1.0 / 10.0)
     let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 20.0
+    let kBrushScale = 2.0
+    
     
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
-    private var interpolateBetweenPoints: Bool = true // :true
     
-    var useCoalescedTouches: Bool = false // :false
-    var usePredictedTouches: Bool = false // :false
+    private var useCoalescedTouches: Bool = true // :false
+    private var usePredictedTouches: Bool = false // :false
+    private var interpolateBetweenPoints: Bool = false // :true
+    private var splinePoints: Bool = false // :true
+
+    
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
     var simplify: Bool = true
@@ -405,12 +416,25 @@ class PaintingView: MTKView {
             
             //------------
             // v1
-            guard let simplifiedPath: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
-                pointsAsNSValues: simplifiedPoints,
-                closed: false,
-                alpha: 0.5) else {
-                return ()
+            if splinePoints {
+                
+                guard let simplifiedPath: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
+                    pointsAsNSValues: simplifiedPoints,
+                    closed: false,
+                    alpha: 0.5) else {
+                    return ()
+                }
+                
+                //--------------------------------------------------------------
+                // MARK: - extract points from curve/spline
+                //--------------------------------------------------------------
+                arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
+                
+            } else {
+                
+                arrCoalescedPoints = self.coalescedPoints.map { $0.f2 * 2.0 }
             }
+            
             
             /**
              So I believe this only works for curves whose points are known ahead of time and do not change!
@@ -438,19 +462,19 @@ class PaintingView: MTKView {
 //                simplifiedPath.smoothened(granularity: 1) // smoothen test
 //            }
             
-            //--------------------------------------------------------------
-            // MARK: - extract points from curve/spline
-            //--------------------------------------------------------------
-            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
-            
             
             //--------------------------------------------------------------
             // MARK: - trim
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
-                // This works
-                if self.coalescedPoints.count >= self.interpolation.rawValue+1 {
-                    self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+
+                if splinePoints {
+                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
+                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+                    }
+                    
+                } else {
+                    self.coalescedPoints.removeAll()
                 }
                 
             } else {
@@ -473,8 +497,8 @@ class PaintingView: MTKView {
             for i in 0 ..< arrCoalescedPoints.count-1 {
                 
                 // MARK: - get the pair of points to interpolate between
-                let p0 = arrCoalescedPoints[i]
-                let p1 = arrCoalescedPoints[i+1]
+                let p0: SIMD2<Float> = arrCoalescedPoints[i]
+                let p1: SIMD2<Float> = arrCoalescedPoints[i+1]
                 
                 // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
