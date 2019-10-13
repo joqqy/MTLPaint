@@ -340,19 +340,18 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
         
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 50.0)
+    let kBrushOpacity = (1.0 / 25.0)
     let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 2.0
+    let kBrushScale = 3.0
     
     // MARK: - CONSTANTS:
-    private var useCoalescedTouches: Bool = false // :false
+    private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-
     private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
     /// - Remark: :false, works
     /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = true
+    private var splinePoints: Bool = false
     private var eSpliningType: ESpliningType = .appleCurve // :.appleCurve works (but not with interpolation between points though)
     
     // MARK: - Draws a line onscreen based on where the user touches
@@ -476,15 +475,35 @@ class PaintingView: MTKView {
             if self.useCoalescedTouches {
 
                 if splinePoints {
-//                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
-//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
-//                    }
-                    self.coalescedPoints.removeAll()
+
+                    if self.coalescedPoints.count > 4 {
+                        
+                        // ... Store 4 last points
+                        let p0 = self.coalescedPoints[self.coalescedPoints.count-4]
+                        let p1 = self.coalescedPoints[self.coalescedPoints.count-3]
+                        let p2 = self.coalescedPoints[self.coalescedPoints.count-2]
+                        let p3 = self.coalescedPoints[self.coalescedPoints.count-1] // last point
+                        
+                        // remake the array using the last 4 points
+                        self.coalescedPoints = [/*p0, p1, p2, p3*/]
+                        
+                        print("left: \(self.coalescedPoints.count)")
+                    }
                     
                 } else {
                     
                     if interpolateBetweenPoints {
-                        self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+                        
+//                        //self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+//                        // ... Store 4 last points
+//                        let p0 = self.coalescedPoints[self.coalescedPoints.count-4]
+//                        let p1 = self.coalescedPoints[self.coalescedPoints.count-3]
+//                        let p2 = self.coalescedPoints[self.coalescedPoints.count-2]
+//                        let p3 = self.coalescedPoints[self.coalescedPoints.count-1] // last point
+                        
+                        let lastPoint = self.coalescedPoints.last!
+                        // remake the array using the last 4 points
+                        self.coalescedPoints = [lastPoint]
                         
                     } else {
                        self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
