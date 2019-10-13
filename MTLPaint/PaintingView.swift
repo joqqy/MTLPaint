@@ -57,7 +57,8 @@ enum ESpliningType {
     
     case thirdPartyCatmullRom
     case appleLine
-    case appleBezier
+    case appleQuad
+    case appleCurve
     case SadunSmoothing
 }
 
@@ -72,24 +73,9 @@ class PaintingView: MTKView {
     
     // MARK: - CONSTANTS:
     
-    // Opaque dots
-//    let kBrushOpacity = (1.0 / 1.0)
-//    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-//    let kBrushScale = 20.0
-    
-    // bigger transparent brush
-    let kBrushOpacity = (1.0 / 50.0)
-    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 1.0
-    
-    
-    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
-    
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-   
 
-    
     var coalescedCount: Int = 0
     var smoothCurve: Bool = false
     var simplify: Bool = true
@@ -355,12 +341,22 @@ class PaintingView: MTKView {
         
     }
 
+        // Opaque dots
+//    let kBrushOpacity = (1.0 / 1.0)
+//    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+//    let kBrushScale = 20.0
+        
+    // bigger transparent brush
+    let kBrushOpacity = (1.0 / 10.0)
+    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushScale = 5.0
 
+    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
        /// - Remark: :false, works
        /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
     private var splinePoints: Bool = false
-    private var eSpliningType: ESpliningType = .appleBezier
+    private var eSpliningType: ESpliningType = .appleQuad
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -369,8 +365,6 @@ class PaintingView: MTKView {
         
         // MARK: - Allocate vertex array buffer for GPU
         var pointsFromPath: [SIMD2<Float>] = []
-        
-        var interpPoint = self.coalescedPoints.last!
 
         switch (self.interpolation)
         {
@@ -391,9 +385,8 @@ class PaintingView: MTKView {
 
             if splinePoints {
                 
-                var strokePath: UIBezierPath = UIBezierPath()
+                var strokePath: UIBezierPath? = UIBezierPath()
 
-                
                 switch (self.eSpliningType) {
                     
                 case .thirdPartyCatmullRom:
@@ -407,40 +400,60 @@ class PaintingView: MTKView {
                     
                     if touchPoints.count >= 2 {
                         for i in 0 ..< touchPoints.count - 1 {
-                            strokePath.move(to: touchPoints[i]) // start point
-                            strokePath.addLine(to: touchPoints[i+1]) // end point
+                            strokePath?.move(to: touchPoints[i]) // start point
+                            strokePath?.addLine(to: touchPoints[i+1]) // end point
                         }
                     }
                     
-                case .appleBezier:
+                case .appleQuad:
                     
+                    if touchPoints.count >= 3 {
+                        for i in 0 ..< touchPoints.count - 3 {
+                                               
+                            //if (touchPoints[i] - touchPoints[i+3]).quadrance > 0.003 {
+                                               
+                                strokePath?.move(to: touchPoints[i]) // start point
+                                strokePath?.addQuadCurve(to: touchPoints[i+2], controlPoint: touchPoints[i+1])
+                            //}
+                        }
+                    }
+                    
+                case .appleCurve:
+         
                     if touchPoints.count >= 4 {
                         for i in 0 ..< touchPoints.count - 3 {
-                            strokePath.move(to: touchPoints[i]) // start point
-                            strokePath.addCurve(to: touchPoints[i+3], // end point
-                                                    controlPoint1: touchPoints[i+1], // control point for start point
-                                                    controlPoint2: touchPoints[i+2]) // control point for end point
+                            
+                            //if (touchPoints[i] - touchPoints[i+3]).quadrance > 0.003 {
+                            
+                                strokePath?.move(to: touchPoints[i]) // start point
+                                strokePath?.addCurve(to: touchPoints[i+3], // end point
+                                                        controlPoint1: touchPoints[i+1], // control point for start point
+                                                        controlPoint2: touchPoints[i+2]) // control point for end point
+                            //}
                         }
                     }
                     
                 case .SadunSmoothing:
                     
                     for i in 0 ..< touchPoints.count-1 {
-                        strokePath.move(to: touchPoints[i]) // start point
-                        strokePath.addLine(to: touchPoints[i+1])
+                        strokePath?.move(to: touchPoints[i]) // start point
+                        strokePath?.addLine(to: touchPoints[i+1])
                     }
  
                     // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
                     if smoothCurve {
                         /// smoothen
-                        strokePath.smoothened(granularity: 1) // smoothen test
+                        strokePath?.smoothened(granularity: 1) // smoothen test
                     }
                 }
 
                 //--------------------------------------------------------------
                 // MARK: - extract points from curve/spline
                 //--------------------------------------------------------------
-                pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+                if let strokePath = strokePath {
+                   pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+                }
+                
                 
             } else {
                 pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
@@ -763,3 +776,4 @@ extension PaintingView {
     }
 
 }
+
