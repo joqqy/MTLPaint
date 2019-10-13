@@ -433,6 +433,7 @@ class PaintingView: MTKView {
 
                 
                 switch (self.eSpliningType) {
+                    
                 case .thirdPartyCatmullRom:
                     
                     simplifiedPath = INTERP.interpolateCGPointsWithCatmullRom(
@@ -445,23 +446,25 @@ class PaintingView: MTKView {
                     if simplifiedPoints.count >= 4 {
                         for i in 0 ..< simplifiedPoints.count - 3 {
                             simplifiedPath.move(to: simplifiedPoints[i]) // start point
-                            simplifiedPath.addCurve(to: simplifiedPoints[i+3], controlPoint1: simplifiedPoints[i+1], controlPoint2: simplifiedPoints[i+2])
+                            simplifiedPath.addCurve(to: simplifiedPoints[i+3], // end point
+                                                    controlPoint1: simplifiedPoints[i+1], // control point for start point
+                                                    controlPoint2: simplifiedPoints[i+2]) // control point for end point
                         }
                     }
                 case .SadunSmoothing:
-                    break
+                    
+                    for i in 0 ..< simplifiedPoints.count-1 {
+                        simplifiedPath.move(to: simplifiedPoints[i]) // start point
+                        simplifiedPath.addLine(to: simplifiedPoints[i+1])
+                    }
+ 
+                    // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
+                    if smoothCurve {
+                        /// smoothen
+                        simplifiedPath.smoothened(granularity: 1) // smoothen test
+                    }
                 }
-                
-                
-//                //------------
-//                // v3 (Erica Sadun)
-//                //--------------------------------------------------------------
-//                // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
-//                if smoothCurve {
-//                    /// smoothen
-//                    simplifiedPath.smoothened(granularity: 1) // smoothen test
-//                }
-                
+
                 //--------------------------------------------------------------
                 // MARK: - extract points from curve/spline
                 //--------------------------------------------------------------
@@ -499,7 +502,7 @@ class PaintingView: MTKView {
             if self.useCoalescedTouches {
 
                 if splinePoints {
-                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*1 {
+                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
                         self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
                     }
                     
