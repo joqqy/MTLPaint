@@ -53,6 +53,13 @@ struct TextureInfo {
     }
 }
 
+enum ESpliningType {
+    
+    case thirdPartyCatmullRom
+    case appleBezier
+    case SadunSmoothing
+}
+
 
 class PaintingView: MTKView {
     
@@ -70,8 +77,8 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
     
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 50.0)
-    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushOpacity = (1.0 / 100.0)
+    let kBrushPixelStep = 3.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
     let kBrushScale = 2.0
     
     
@@ -80,7 +87,10 @@ class PaintingView: MTKView {
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
     private var interpolateBetweenPoints: Bool = true // :true
-    private var splinePoints: Bool = false // :true
+    /// - Remark: :false, works
+    /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
+    private var splinePoints: Bool = true
+    private var eSpliningType: ESpliningType = .appleBezier
 
     
     var coalescedCount: Int = 0
@@ -418,12 +428,39 @@ class PaintingView: MTKView {
             // v1
             if splinePoints {
                 
-                guard let simplifiedPath: UIBezierPath = INTERP.interpolateCGPointsWithCatmullRom(
-                    pointsAsNSValues: simplifiedPoints,
-                    closed: false,
-                    alpha: 0.5) else {
-                    return ()
+                
+                var simplifiedPath: UIBezierPath = UIBezierPath()
+
+                
+                switch (self.eSpliningType) {
+                case .thirdPartyCatmullRom:
+                    
+                    simplifiedPath = INTERP.interpolateCGPointsWithCatmullRom(
+                        pointsAsNSValues: simplifiedPoints,
+                        closed: false,
+                        alpha: 0.5)
+                    
+                case .appleBezier:
+                    
+                    if simplifiedPoints.count >= 4 {
+                        for i in 0 ..< simplifiedPoints.count - 3 {
+                            simplifiedPath.move(to: simplifiedPoints[i]) // start point
+                            simplifiedPath.addCurve(to: simplifiedPoints[i+3], controlPoint1: simplifiedPoints[i+1], controlPoint2: simplifiedPoints[i+2])
+                        }
+                    }
+                case .SadunSmoothing:
+                    break
                 }
+                
+                
+//                //------------
+//                // v3 (Erica Sadun)
+//                //--------------------------------------------------------------
+//                // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
+//                if smoothCurve {
+//                    /// smoothen
+//                    simplifiedPath.smoothened(granularity: 1) // smoothen test
+//                }
                 
                 //--------------------------------------------------------------
                 // MARK: - extract points from curve/spline
@@ -453,14 +490,7 @@ class PaintingView: MTKView {
 //            let simplifiedPath: UIBezierPath = UIBezierPath.smoothFromPoints(simplifiedPoints)
             
             
-//            //------------
-//            // v3 (Erica Sadun)
-//            //--------------------------------------------------------------
-//            // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
-//            if smoothCurve {
-//                /// smoothen
-//                simplifiedPath.smoothened(granularity: 1) // smoothen test
-//            }
+
             
             
             //--------------------------------------------------------------
@@ -469,7 +499,7 @@ class PaintingView: MTKView {
             if self.useCoalescedTouches {
 
                 if splinePoints {
-                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
+                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*1 {
                         self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
                     }
                     

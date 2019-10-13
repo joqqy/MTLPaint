@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1D08FE7C234F2E7000097D7B /* Point2DRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */; };
-		1D08FE7D234F2E7000097D7B /* UIBezierPath+CGPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */; };
-		1D08FE7E234F2E7000097D7B /* SwiftSimplify.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */; };
 		1D721962234A9C46007FE2CF /* CGPointExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = 1D721960234A9C45007FE2CF /* CGPointExtension.m */; };
 		1D721977234A9CF0007FE2CF /* Array+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721964234A9CF0007FE2CF /* Array+Extensions.swift */; };
 		1D721978234A9CF0007FE2CF /* Int+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D721965234A9CF0007FE2CF /* Int+Extensions.swift */; };
@@ -57,9 +54,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Point2DRepresentable.swift; sourceTree = "<group>"; };
-		1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIBezierPath+CGPoint.swift"; sourceTree = "<group>"; };
-		1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftSimplify.swift; sourceTree = "<group>"; };
 		1D72195F234A9C44007FE2CF /* MTLPaint-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MTLPaint-Bridging-Header.h"; sourceTree = "<group>"; };
 		1D721960234A9C45007FE2CF /* CGPointExtension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CGPointExtension.m; sourceTree = "<group>"; };
 		1D721961234A9C45007FE2CF /* CGPointExtension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CGPointExtension.h; sourceTree = "<group>"; };
@@ -121,16 +115,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1D08FE78234F2E7000097D7B /* SwiftSimplify */ = {
-			isa = PBXGroup;
-			children = (
-				1D08FE79234F2E7000097D7B /* Point2DRepresentable.swift */,
-				1D08FE7A234F2E7000097D7B /* UIBezierPath+CGPoint.swift */,
-				1D08FE7B234F2E7000097D7B /* SwiftSimplify.swift */,
-			);
-			path = SwiftSimplify;
-			sourceTree = "<group>";
-		};
 		1D721963234A9CF0007FE2CF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -211,7 +195,6 @@
 			isa = PBXGroup;
 			children = (
 				1D782761234FC546007D816B /* SpeedSketch */,
-				1D08FE78234F2E7000097D7B /* SwiftSimplify */,
 				D006DE9E234A1187009D0750 /* Bridge */,
 				D7AACE312265BF1400EB674A /* ReadMe.md */,
 				D7AACE1E2265BE9B00EB674A /* MTLPaint */,
@@ -339,10 +322,7 @@
 				1D721984234A9CF0007FE2CF /* matrix_utilities.swift in Sources */,
 				1D782763234FC561007D816B /* StrokeCollection.swift in Sources */,
 				1D721980234A9CF0007FE2CF /* matrix_float2x3+Extensions.swift in Sources */,
-				1D08FE7C234F2E7000097D7B /* Point2DRepresentable.swift in Sources */,
-				1D08FE7D234F2E7000097D7B /* UIBezierPath+CGPoint.swift in Sources */,
 				1D721988234A9CF0007FE2CF /* Double+Extensions.swift in Sources */,
-				1D08FE7E234F2E7000097D7B /* SwiftSimplify.swift in Sources */,
 				1D721977234A9CF0007FE2CF /* Array+Extensions.swift in Sources */,
 				1D721982234A9CF0007FE2CF /* float2x3+Extensions.swift in Sources */,
 				D006DEC6234A24F3009D0750 /* Collection+Extensions.swift in Sources */,
