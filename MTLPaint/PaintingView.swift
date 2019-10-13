@@ -56,6 +56,7 @@ struct TextureInfo {
 enum ESpliningType {
     
     case thirdPartyCatmullRom
+    case appleLine
     case appleBezier
     case SadunSmoothing
 }
@@ -355,11 +356,11 @@ class PaintingView: MTKView {
     }
 
 
-    private var interpolateBetweenPoints: Bool = true // :true
+    private var interpolateBetweenPoints: Bool = false // :true
        /// - Remark: :false, works
        /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = false
-    private var eSpliningType: ESpliningType = .appleBezier
+    private var splinePoints: Bool = true
+    private var eSpliningType: ESpliningType = .appleLine
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -367,16 +368,128 @@ class PaintingView: MTKView {
                             predictedPoints: [CGPoint]) {
         
         // MARK: - Allocate vertex array buffer for GPU
-        var arrPoints: [SIMD2<Float>] = []
-        var arrCoalescedPoints: [SIMD2<Float>] = []
-        var arrPredictedPoints: [SIMD2<Float>] = []
+        var pointsFromPath: [SIMD2<Float>] = []
         
         var interpPoint = self.coalescedPoints.last!
 
         switch (self.interpolation)
         {
-        case .hermite:
+        case .catmullRom:
             
+            //--------------------------------------------------------------
+            // MARK: - Guard check the [CGPoint] array collected from touch
+            //--------------------------------------------------------------
+            if splinePoints {
+                guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
+            }
+            
+            //--------------------------------------------------------------
+            // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
+            //--------------------------------------------------------------
+            // local copy the global points
+            let touchPoints = self.coalescedPoints
+
+            if splinePoints {
+                
+                var strokePath: UIBezierPath = UIBezierPath()
+
+                
+                switch (self.eSpliningType) {
+                    
+                case .thirdPartyCatmullRom:
+                    
+                    strokePath = INTERP.interpolateCGPointsWithCatmullRom(
+                        pointsAsNSValues: touchPoints,
+                        closed: false,
+                        alpha: 0.5)
+                    
+                case .appleLine:
+                    
+                    if touchPoints.count >= 2 {
+                        for i in 0 ..< touchPoints.count - 1 {
+                            strokePath.move(to: touchPoints[i]) // start point
+                            strokePath.addLine(to: touchPoints[i+1]) // end point
+                        }
+                    }
+                    
+                case .appleBezier:
+                    
+                    if touchPoints.count >= 4 {
+                        for i in 0 ..< touchPoints.count - 3 {
+                            strokePath.move(to: touchPoints[i]) // start point
+                            strokePath.addCurve(to: touchPoints[i+3], // end point
+                                                    controlPoint1: touchPoints[i+1], // control point for start point
+                                                    controlPoint2: touchPoints[i+2]) // control point for end point
+                        }
+                    }
+                    
+                case .SadunSmoothing:
+                    
+                    for i in 0 ..< touchPoints.count-1 {
+                        strokePath.move(to: touchPoints[i]) // start point
+                        strokePath.addLine(to: touchPoints[i+1])
+                    }
+ 
+                    // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
+                    if smoothCurve {
+                        /// smoothen
+                        strokePath.smoothened(granularity: 1) // smoothen test
+                    }
+                }
+
+                //--------------------------------------------------------------
+                // MARK: - extract points from curve/spline
+                //--------------------------------------------------------------
+                pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+                
+            } else {
+                pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
+            }
+            
+            /**
+             So I believe this only works for curves whose points are known ahead of time and do not change!
+             We get weird funky chaos, and I believe it is because we are drawing continuously.
+             If so, then this library SimplifySwift will not do or cut it for us
+             */
+//            //------------
+//            // v2 (SimplifySwift)
+//            // MARK: SimplifySwift simplify
+//            let hQ: Bool = true
+//            // MARK: Simplify (note this has simplification, v1 does not)
+//            /// - Parameter tolerance: the higher the blocker and less points (default is 1)
+//            /// - Returns: [CGPoints] Array
+//            let simplifiedPoints = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
+//            // MARK: Smoothen
+//            let simplifiedPath: UIBezierPath = UIBezierPath.smoothFromPoints(simplifiedPoints)
+            
+
+            //--------------------------------------------------------------
+            // MARK: - trim
+            //--------------------------------------------------------------
+            if self.useCoalescedTouches {
+
+                if splinePoints {
+//                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
+//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
+//                    }
+                    self.coalescedPoints.removeAll()
+                    
+                } else {
+                    if interpolateBetweenPoints {
+                        self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
+                    } else {
+                       self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
+                    }
+                }
+                
+            } else {
+                if self.coalescedPoints.count > self.interpolation.rawValue {
+                    //self.coalescedPoints.removeFirst()
+                    self.coalescedPoints.removeAll()
+                }
+            }
+        case .hermite:
+        
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
             //--------------------------------------------------------------
@@ -395,7 +508,7 @@ class PaintingView: MTKView {
             //--------------------------------------------------------------
             // MARK: - extract points from curve/spline
             //--------------------------------------------------------------
-            arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
+            pointsFromPath = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
             
             //--------------------------------------------------------------
             // MARK: - trim
@@ -412,116 +525,6 @@ class PaintingView: MTKView {
                     //print("(if n it works) catmull remaining: \(self.coalescedPoints.count)")
                 }
             }
-            
-        case .catmullRom:
-            
-            //--------------------------------------------------------------
-            // MARK: - Guard check the [CGPoint] array collected from touch
-            //--------------------------------------------------------------
-            if splinePoints {
-                guard self.coalescedPoints.count > self.interpolation.rawValue else { return }
-            }
-            
-            //--------------------------------------------------------------
-            // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
-            //--------------------------------------------------------------
-            // local copy the global points
-            let simplifiedPoints = self.coalescedPoints
-
-            if splinePoints {
-                
-                var simplifiedPath: UIBezierPath = UIBezierPath()
-
-                
-                switch (self.eSpliningType) {
-                    
-                case .thirdPartyCatmullRom:
-                    
-                    simplifiedPath = INTERP.interpolateCGPointsWithCatmullRom(
-                        pointsAsNSValues: simplifiedPoints,
-                        closed: false,
-                        alpha: 0.5)
-                    
-                case .appleBezier:
-                    
-                    if simplifiedPoints.count >= 4 {
-                        for i in 0 ..< simplifiedPoints.count - 3 {
-                            simplifiedPath.move(to: simplifiedPoints[i]) // start point
-                            simplifiedPath.addCurve(to: simplifiedPoints[i+3], // end point
-                                                    controlPoint1: simplifiedPoints[i+1], // control point for start point
-                                                    controlPoint2: simplifiedPoints[i+2]) // control point for end point
-                        }
-                    }
-                case .SadunSmoothing:
-                    
-                    for i in 0 ..< simplifiedPoints.count-1 {
-                        simplifiedPath.move(to: simplifiedPoints[i]) // start point
-                        simplifiedPath.addLine(to: simplifiedPoints[i+1])
-                    }
- 
-                    // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
-                    if smoothCurve {
-                        /// smoothen
-                        simplifiedPath.smoothened(granularity: 1) // smoothen test
-                    }
-                }
-
-                //--------------------------------------------------------------
-                // MARK: - extract points from curve/spline
-                //--------------------------------------------------------------
-                arrCoalescedPoints = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
-                
-            } else {
-                arrCoalescedPoints = self.coalescedPoints.map { $0.f2 * 2.0 }
-            }
-            
-            
-            /**
-             So I believe this only works for curves whose points are known ahead of time and do not change!
-             We get weird funky chaos, and I believe it is because we are drawing continuously.
-             If so, then this library SimplifySwift will not do or cut it for us
-             */
-//            //------------
-//            // v2 (SimplifySwift)
-//            // MARK: SimplifySwift simplify
-//            let hQ: Bool = true
-//            // MARK: Simplify (note this has simplification, v1 does not)
-//            /// - Parameter tolerance: the higher the blocker and less points (default is 1)
-//            /// - Returns: [CGPoints] Array
-//            let simplifiedPoints = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
-//            // MARK: Smoothen
-//            let simplifiedPath: UIBezierPath = UIBezierPath.smoothFromPoints(simplifiedPoints)
-            
-            
-
-            
-            
-            //--------------------------------------------------------------
-            // MARK: - trim
-            //--------------------------------------------------------------
-            if self.useCoalescedTouches {
-
-                if splinePoints {
-//                    if self.coalescedPoints.count >= (self.interpolation.rawValue+1)*2 {
-//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue+1)
-//                    }
-                    self.coalescedPoints.removeAll()
-                    
-                } else {
-                    // This works!
-                    if interpolateBetweenPoints {
-                        self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
-                    } else {
-                       self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
-                    }
-                }
-                
-            } else {
-                if self.coalescedPoints.count > self.interpolation.rawValue {
-                    //self.coalescedPoints.removeFirst()
-                    self.coalescedPoints.removeAll()
-                }
-            }
         }
         
         //--------------------------------------------------------------
@@ -532,11 +535,11 @@ class PaintingView: MTKView {
 
             var coalescedInterpolated: [SIMD2<Float>] = []
             
-            for i in 0 ..< arrCoalescedPoints.count-1 {
+            for i in 0 ..< pointsFromPath.count-1 {
                 
                 // MARK: - get the pair of points to interpolate between
-                let p0: SIMD2<Float> = arrCoalescedPoints[i]
-                var p1: SIMD2<Float> = arrCoalescedPoints[i+1]
+                let p0: SIMD2<Float> = pointsFromPath[i]
+                let p1: SIMD2<Float> = pointsFromPath[i+1]
                 
                 // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
                 let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
@@ -550,9 +553,6 @@ class PaintingView: MTKView {
                 }
             }
             
-            
-            
-            
             /// Get the count of the array for the final points
             newCount = coalescedInterpolated.count
             //debug
@@ -565,12 +565,12 @@ class PaintingView: MTKView {
         } else {
             
             /// Get the count of the array for the final points
-            newCount = arrCoalescedPoints.count
+            newCount = pointsFromPath.count
             //debug
             print("newCount: \(newCount)")
             // MARK: - Create the mtlbuffer
             if newCount > 0 {
-                self.vertBuffer = metalDevice.makeBuffer(bytes: &arrCoalescedPoints, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+                self.vertBuffer = metalDevice.makeBuffer(bytes: &pointsFromPath, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
             }
         }
         
