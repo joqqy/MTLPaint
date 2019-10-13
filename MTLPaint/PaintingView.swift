@@ -70,8 +70,8 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
     
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 10.0)
-    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
+    let kBrushOpacity = (1.0 / 50.0)
+    let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
     let kBrushScale = 2.0
     
     
@@ -79,7 +79,7 @@ class PaintingView: MTKView {
     
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-    private var interpolateBetweenPoints: Bool = false // :true
+    private var interpolateBetweenPoints: Bool = true // :true
     private var splinePoints: Bool = false // :true
 
     
@@ -474,7 +474,8 @@ class PaintingView: MTKView {
                     }
                     
                 } else {
-                    self.coalescedPoints.removeAll()
+                    // This works!
+                    self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
                 }
                 
             } else {
