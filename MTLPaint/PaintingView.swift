@@ -494,15 +494,8 @@ class PaintingView: MTKView {
                     
                     if interpolateBetweenPoints {
                         
-//                        //self.coalescedPoints.removeFirst(self.coalescedPoints.count-1)
-//                        // ... Store 4 last points
-//                        let p0 = self.coalescedPoints[self.coalescedPoints.count-4]
-//                        let p1 = self.coalescedPoints[self.coalescedPoints.count-3]
-//                        let p2 = self.coalescedPoints[self.coalescedPoints.count-2]
-//                        let p3 = self.coalescedPoints[self.coalescedPoints.count-1] // last point
-                        
                         let lastPoint = self.coalescedPoints.last!
-                        // remake the array using the last 4 points
+                        // remake the array using the last point
                         self.coalescedPoints = [lastPoint]
                         
                     } else {

@@ -36,9 +36,9 @@ class INTERP {
                 var p2:  CGPoint = CGPoint.zero
                 var p3:  CGPoint = CGPoint.zero
                 
-                let nextii: Int      = (ii+1)%pointsAsNSValues.count
-                let nextnextii: Int  = (nextii+1)%pointsAsNSValues.count
-                let previi: Int      = (ii-1 < 0 ? pointsAsNSValues.count-1 : ii-1)
+                let nextii: Int      = (ii + 1) % pointsAsNSValues.count
+                let nextnextii: Int  = (nextii + 1) % pointsAsNSValues.count
+                let previi: Int      = (ii - 1 < 0 ? pointsAsNSValues.count-1 : ii-1)
                 
                 p1 = pointsAsNSValues[ii]
                 p0 = pointsAsNSValues[previi]
