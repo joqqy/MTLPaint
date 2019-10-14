@@ -56,17 +56,17 @@ struct TextureInfo {
 enum ESpliningType {
     
     case bezLine
-    case catmullRom
     case hermite
+    case catmullRom
     case SadunSmoothing
 }
 
 struct NControlPoints {
     
-    static let bezLine = 1
-    static let catmullRom = 3
-    static let hermite = 3
-    static let SadunSmoothing = 3
+    static let bezLine = 2
+    static let hermite = 2
+    static let catmullRom = 4
+    static let SadunSmoothing = 4
 }
 
 
@@ -362,7 +362,7 @@ class PaintingView: MTKView {
     /// spline
     private var splinePoints: Bool = true // :true
     /// splining type
-    private var eSpliningType: ESpliningType = .hermite
+    private var eSpliningType: ESpliningType = .catmullRom
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -380,8 +380,11 @@ class PaintingView: MTKView {
         case .bezLine:
             guard self.coalescedPoints.count > NControlPoints.bezLine else { return }
  
-        case .catmullRom, .SadunSmoothing, .hermite:
+        case .catmullRom, .SadunSmoothing:
             guard self.coalescedPoints.count > NControlPoints.catmullRom else { return }
+            
+        case .hermite:
+            guard self.coalescedPoints.count > NControlPoints.hermite else { return }
             
         @unknown default:
             break
@@ -412,7 +415,8 @@ class PaintingView: MTKView {
                 //------------------
                 // MARK: - Trim origial touch cache
                 //------------------
-                if self.coalescedPoints.count > 3 {
+                if self.coalescedPoints.count >= NControlPoints.catmullRom {
+                    
                     let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
                     let point2 = self.coalescedPoints[self.coalescedPoints.count - 2]
                     let point3 = self.coalescedPoints.last!
@@ -426,7 +430,8 @@ class PaintingView: MTKView {
                 //------------------
                 // MARK: - Spline
                 //------------------
-                if touchPoints.count >= 2 {
+                if touchPoints.count >= NControlPoints.bezLine {
+                    
                     for i in 0 ..< touchPoints.count - 1 {
                         strokePath?.move(to: touchPoints[i]) // start point
                         strokePath?.addLine(to: touchPoints[i+1]) // end point
@@ -458,9 +463,12 @@ class PaintingView: MTKView {
                 //------------------
                 // MARK: - Trim origial touch cache
                 //------------------
-                let lastPoint = self.coalescedPoints.last!
-                // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
+                if self.coalescedPoints.count >= NControlPoints.SadunSmoothing {
+                    
+                    let lastPoint = self.coalescedPoints.last!
+                    // remake the array using the last point
+                    self.coalescedPoints = [lastPoint]
+                }
                     
             case .hermite:
                                
@@ -474,9 +482,12 @@ class PaintingView: MTKView {
                 //------------------
                 // MARK: - Trim origial touch cache
                 //------------------
-                let lastPoint = self.coalescedPoints.last!
-                // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
+                if self.coalescedPoints.count >= NControlPoints.hermite {
+                    
+                    let lastPoint = self.coalescedPoints.last!
+                    // remake the array using the last point
+                    self.coalescedPoints = [lastPoint]
+                }
             }
 
             
