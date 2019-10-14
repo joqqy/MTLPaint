@@ -122,14 +122,14 @@ class INTERP {
     
     
     static func interpolateCGPointsWithHermite(
-        pointsAsNSValues: [CGPoint],
+        points: [CGPoint],
         closed:Bool) -> UIBezierPath! {
         
-        if pointsAsNSValues.count < 2 {
+        if points.count < 2 {
             return nil
         }
         
-        let nCurves:Int = (closed) ? pointsAsNSValues.count : pointsAsNSValues.count-1
+        let nCurves:Int = (closed) ? points.count : points.count-1
         let path:UIBezierPath = UIBezierPath()
         
         for ii in 0 ..< nCurves {
@@ -143,14 +143,14 @@ class INTERP {
             var my:CGFloat
             
             //---------------------------------------------------
-            curPt = pointsAsNSValues[ii]
+            curPt = points[ii]
             if (ii == 0) {
                 path.move(to: curPt)
             }
-            var nextii:Int = (ii+1)%pointsAsNSValues.count
-            var previi:Int = (ii-1 < 0 ? pointsAsNSValues.count-1 : ii-1)
-            prevPt = pointsAsNSValues[previi]
-            nextPt = pointsAsNSValues[nextii]
+            var nextii:Int = (ii+1)%points.count
+            var previi:Int = (ii-1 < 0 ? points.count-1 : ii-1)
+            prevPt = points[previi]
+            nextPt = points[nextii]
             endPt = nextPt
             if (closed || ii > 0) {
                 mx = (nextPt.x - curPt.x)*0.5 + (curPt.x - prevPt.x)*0.5
@@ -165,11 +165,11 @@ class INTERP {
             ctrlPt1.y = curPt.y + my / 3.0
             
             //---------------------------------------------------
-            curPt = pointsAsNSValues[nextii]
-            nextii = (nextii+1) % pointsAsNSValues.count
+            curPt = points[nextii]
+            nextii = (nextii+1) % points.count
             previi = ii
-            prevPt = pointsAsNSValues[previi]
-            nextPt = pointsAsNSValues[nextii]
+            prevPt = points[previi]
+            nextPt = points[nextii]
             if (closed || ii < nCurves-1) {
                 mx = (nextPt.x - curPt.x)*0.5 + (curPt.x - prevPt.x)*0.5
                 my = (nextPt.y - curPt.y)*0.5 + (curPt.y - prevPt.y)*0.5
