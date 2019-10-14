@@ -346,9 +346,9 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
         
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 20.0)
+    let kBrushOpacity = (1.0 / 50.0)
     let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 3.0
+    let kBrushScale = 1.0 * 0.5
     
     // MARK: - CONSTANTS:
     
@@ -425,10 +425,9 @@ class PaintingView: MTKView {
             case .bezLine:
                     
                 //------------------------------------
-                // MARK: - Spline
+                // MARK: - No spline, just a line between two points
                 //------------------------------------
                 if touchPoints.count >= NControlPoints.bezLine {
-                    
                     for i in 0 ..< touchPoints.count - 1 {
                         strokePath?.move(to: touchPoints[i]) // start point
                         strokePath?.addLine(to: touchPoints[i+1]) // end point
@@ -438,9 +437,11 @@ class PaintingView: MTKView {
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
-                let lastPoint = self.points.last!
-                // remake the array using the last point
-                self.points = [lastPoint]
+                if self.points.count >= NControlPoints.catmullRom {
+                    let lastPoint = self.points.last!
+                    // remake the array using the last point
+                    self.points = [lastPoint]
+                }
      
             case .SadunSmoothing:
                     
@@ -461,7 +462,6 @@ class PaintingView: MTKView {
                 // MARK: - Trim origial touch cache
                 //------------------------------------
                 if self.points.count >= NControlPoints.SadunSmoothing {
-                    
                     let lastPoint = self.points.last!
                     // remake the array using the last point
                     self.points = [lastPoint]
@@ -480,7 +480,6 @@ class PaintingView: MTKView {
                 // MARK: - Trim origial touch cache
                 //------------------------------------
                 if self.points.count >= NControlPoints.hermite {
-                    
                     let lastPoint = self.points.last!
                     // remake the array using the last point
                     self.points = [lastPoint]
