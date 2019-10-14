@@ -352,12 +352,16 @@ class PaintingView: MTKView {
     let kBrushScale = 3.0
     
     // MARK: - CONSTANTS:
+    
+    /// interpolate between final points
     private var interpolateBetweenPoints: Bool = true // :true
-    
+    /// use coalesced
     private var useCoalescedTouches: Bool = true // :true
+    /// use predicted
     private var usePredictedTouches: Bool = false // :false
-    
+    /// spline
     private var splinePoints: Bool = true // :true
+    /// splining type
     private var eSpliningType: ESpliningType = .catmullRom
     
     // MARK: - Draws a line onscreen based on where the user touches
@@ -367,8 +371,6 @@ class PaintingView: MTKView {
         
         // MARK: - Allocate vertex array buffer for GPU
         var pointsFromPath: [SIMD2<Float>] = []
-
-
             
         //--------------------------------------------------------------
         // MARK: - Guard check the [CGPoint] array collected from touch
