@@ -352,13 +352,11 @@ class PaintingView: MTKView {
     let kBrushScale = 3.0
     
     // MARK: - CONSTANTS:
-    private var interpolateBetweenPoints: Bool = true // :true
-    
-    private var useCoalescedTouches: Bool = true // :true
-    private var usePredictedTouches: Bool = false // :false
-    
-    private var splinePoints: Bool = true // :true
-    private var eSpliningType: ESpliningType = .catmullRom
+    private var interpolateBetweenPoints: Bool  = true      // :true
+    private var useCoalescedTouches: Bool       = true      // :true
+    private var usePredictedTouches: Bool       = false     // :false
+    private var splinePoints: Bool              = true      // :true
+    private var eSpliningType: ESpliningType    = .catmullRom
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -367,8 +365,6 @@ class PaintingView: MTKView {
         
         // MARK: - Allocate vertex array buffer for GPU
         var pointsFromPath: [SIMD2<Float>] = []
-
-
             
         //--------------------------------------------------------------
         // MARK: - Guard check the [CGPoint] array collected from touch
@@ -504,57 +500,8 @@ class PaintingView: MTKView {
             @unknown default:
                 fatalError()
             }
-
-
-                
         }
-//            if self.useCoalescedTouches {
-//
-//                if self.useCoalescedTouches {
-//
-//                    if !self.coalescedPoints.isEmpty {
-//                        let lastPoint = self.coalescedPoints.last!
-//                        // remake the array using the last point
-//                        self.coalescedPoints = [lastPoint]
-//                    }
-//
-//                } else {
-//                    if self.coalescedPoints.count > self.interpolation.rawValue {
-//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue)
-//                    }
-//                }
-//
-////                if splinePoints {
-////                    if self.coalescedPoints.count > self.interpolation.rawValue {
-////                        // ... Store 4 last points
-////                        let p0 = self.coalescedPoints[self.coalescedPoints.count-4]
-////                        let p1 = self.coalescedPoints[self.coalescedPoints.count-3]
-////                        let p2 = self.coalescedPoints[self.coalescedPoints.count-2]
-////                        let p3 = self.coalescedPoints[self.coalescedPoints.count-1] // last point
-////
-////                        // remake the array using the last 4 points
-////                        self.coalescedPoints = [/*p0, p1, p2,*/ p3]
-////
-////                        print("left: \(self.coalescedPoints.count)")
-////                    }
-////
-////                } else {
-////                    if interpolateBetweenPoints {
-////                        let lastPoint = self.coalescedPoints.last!
-////                        // remake the array using the last 4 points
-////                        self.coalescedPoints = [lastPoint]
-////
-////                    } else {
-////                       self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
-////                    }
-////                }
-//
-//            } else {
-//                if self.coalescedPoints.count > self.interpolation.rawValue {
-//                    self.coalescedPoints.removeFirst(self.interpolation.rawValue) // .removeFirst(3) worked! with splining and interpolate between points
-//                }
-//            }
-      
+
         
         //--------------------------------------------------------------
         // MARK: - Linearly interpolate between extracted points (fill points between final points, if distance is greater than kBrushPixelStep)
