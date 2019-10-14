@@ -62,6 +62,17 @@ enum ESpliningType: Int {
     case appleQuad
     case appleCurve
     case SadunSmoothing
+    case hermite
+}
+
+struct NControlPoints {
+    
+    static let appleLine = 1
+    static let appleQuad = 2
+    static let appleCurve = 3
+    static let thirdPartyCatmullRom = 3
+    static let SadunSmoothing = 3
+    static let hermite = 3
 }
 
 
@@ -349,11 +360,11 @@ class PaintingView: MTKView {
     // MARK: - CONSTANTS:
     private var useCoalescedTouches: Bool = true // :false
     private var usePredictedTouches: Bool = false // :false
-    private var interpolation: EInterpolationMethod = .catmullRom // :.catmullRom // .hermite is still buggy and jittery, not sure why
+    private var interpolation: EInterpolationMethod = .hermite // :.catmullRom // .hermite is still buggy and jittery, not sure why
     private var interpolateBetweenPoints: Bool = true // :true
     /// - Remark: :false, works
     /// - Remark: :true, possibly buggy, causes jittery strokes, not sure if the splining itself is faulty or other parts in the strokes handling algo causes the problems
-    private var splinePoints: Bool = false // :false
+    private var splinePoints: Bool = true // :false
     private var eSpliningType: ESpliningType = .SadunSmoothing
     
     // MARK: - Draws a line onscreen based on where the user touches
@@ -374,13 +385,13 @@ class PaintingView: MTKView {
             switch (self.eSpliningType) {
                 
             case .appleLine:
-                guard self.coalescedPoints.count > 1 else { return }
+                guard self.coalescedPoints.count > NControlPoints.appleLine else { return }
                 
             case .appleQuad:
-                guard self.coalescedPoints.count > 2 else { return }
-                
+                guard self.coalescedPoints.count > NControlPoints.appleQuad else { return }
+ 
             case .thirdPartyCatmullRom, .appleCurve, .SadunSmoothing:
-                guard self.coalescedPoints.count > 3 else { return }
+                guard self.coalescedPoints.count > NControlPoints.thirdPartyCatmullRom else { return }
                 
             @unknown default:
                 break
@@ -453,6 +464,9 @@ class PaintingView: MTKView {
                         /// smoothen
                         strokePath?.smoothened(granularity: 1) // smoothen test
                     }
+                    
+                case .hermite:
+                    break
                 }
 
                 //--------------------------------------------------------------
@@ -485,7 +499,7 @@ class PaintingView: MTKView {
             
 
             //--------------------------------------------------------------
-            // MARK: - trim
+            // MARK: - trim original touch cache (control points)
             //--------------------------------------------------------------
             if self.useCoalescedTouches {
                 
@@ -535,6 +549,27 @@ class PaintingView: MTKView {
             }
             
         case .hermite:
+            
+            //--------------------------------------------------------------
+            // MARK: - Guard check the [CGPoint] array collected from touch
+            //--------------------------------------------------------------
+            switch (self.eSpliningType) {
+                           
+            case .appleLine:
+                guard self.coalescedPoints.count > NControlPoints.appleLine else { return }
+                           
+            case .appleQuad:
+                guard self.coalescedPoints.count > NControlPoints.appleQuad else { return }
+            
+            case .thirdPartyCatmullRom, .appleCurve, .SadunSmoothing:
+                guard self.coalescedPoints.count > NControlPoints.thirdPartyCatmullRom else { return }
+                           
+            case .hermite:
+                guard self.coalescedPoints.count > NControlPoints.hermite else { return }
+                
+            @unknown default:
+                    break
+            }
         
             //--------------------------------------------------------------
             // MARK: - Guard check the [CGPoint] array collected from touch
@@ -545,33 +580,32 @@ class PaintingView: MTKView {
             // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
             //--------------------------------------------------------------
             // local copy the global points
-            let simplifiedPoints = self.coalescedPoints
-            
-            guard let simplifiedPath = INTERP.interpolateCGPointsWithHermite(pointsAsNSValues: simplifiedPoints, closed: false) else {
-                return ()
-            }
-            
-            //--------------------------------------------------------------
-            // MARK: - extract points from curve/spline
-            //--------------------------------------------------------------
-            pointsFromPath = self.extractPoints_fromUIBezierPath_f2(simplifiedPath)!
-            
-            //--------------------------------------------------------------
-            // MARK: - trim
-            //--------------------------------------------------------------
-            if self.useCoalescedTouches {
+            let touchPoints = self.coalescedPoints
+            if splinePoints {
                 
-                if !self.coalescedPoints.isEmpty {
-                    let lastPoint = self.coalescedPoints.last!
-                    // remake the array using the last point
-                    self.coalescedPoints = [lastPoint]
-                }
+                var strokePath: UIBezierPath? = UIBezierPath()
+                           
+                strokePath = INTERP.interpolateCGPointsWithHermite(points: touchPoints, closed: false)
                 
+                /// - Remark: Flexmonkey version
+                //strokePath?.interpolatePointsWithHermite(interpolationPoints: touchPoints)
+                
+                //--------------------------------------------------------------
+                // MARK: - extract points from curve/spline
+                //--------------------------------------------------------------
+                pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+                           
             } else {
-                if self.coalescedPoints.count > self.interpolation.rawValue {
-                    self.coalescedPoints.removeFirst(self.interpolation.rawValue)
-                }
+                pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
             }
+            
+            //--------------------------------------------------------------
+            // MARK: - trim original touch cache (control points)
+            //--------------------------------------------------------------
+            if !self.coalescedPoints.isEmpty {
+                               let lastPoint = self.coalescedPoints.last!
+                               // remake the array using the last point
+                               self.coalescedPoints = [lastPoint]}
         }
         
         //--------------------------------------------------------------
