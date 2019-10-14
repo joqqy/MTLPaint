@@ -91,10 +91,9 @@ class PaintingView: MTKView {
 
     private var needsErase: Bool = false
     private var initialized: Bool = false
-    
+
     var points: [CGPoint] = []
-    var coalescedPoints: [CGPoint] = []
-    var predictedPoints: [CGPoint] = []
+    
     
     var prevLocation: CGPoint? = nil
     
@@ -365,9 +364,7 @@ class PaintingView: MTKView {
     private var eSpliningType: ESpliningType = .catmullRom
     
     // MARK: - Draws a line onscreen based on where the user touches
-    private func renderLine(points: [CGPoint],
-                            coalescedPoints: [CGPoint],
-                            predictedPoints: [CGPoint]) {
+    private func renderLine(points: [CGPoint]) {
         
         // MARK: - Allocate vertex array buffer for GPU
         var pointsFromPath: [SIMD2<Float>] = []
@@ -378,13 +375,13 @@ class PaintingView: MTKView {
         switch (self.eSpliningType) {
                 
         case .bezLine:
-            guard self.coalescedPoints.count > NControlPoints.bezLine else { return }
+            guard self.points.count > NControlPoints.bezLine else { return }
  
         case .catmullRom, .SadunSmoothing:
-            guard self.coalescedPoints.count > NControlPoints.catmullRom else { return }
+            guard self.points.count > NControlPoints.catmullRom else { return }
             
         case .hermite:
-            guard self.coalescedPoints.count > NControlPoints.hermite else { return }
+            guard self.points.count > NControlPoints.hermite else { return }
             
         @unknown default:
             break
@@ -394,7 +391,7 @@ class PaintingView: MTKView {
         // MARK: Spline/Bezier/Smoothen the collected [CGPoint] array
         //--------------------------------------------------------------
         // local copy the global points
-        let touchPoints = self.coalescedPoints
+        let touchPoints = self.points
 
         if self.splinePoints {
                 
@@ -415,14 +412,14 @@ class PaintingView: MTKView {
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
-                if self.coalescedPoints.count >= NControlPoints.catmullRom {
+                if self.points.count >= NControlPoints.catmullRom {
                     
-                    let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
-                    let point2 = self.coalescedPoints[self.coalescedPoints.count - 2]
-                    let point3 = self.coalescedPoints.last!
+                    let point1 = self.points[self.points.count - 3]
+                    let point2 = self.points[self.points.count - 2]
+                    let point3 = self.points.last!
 
                     // remake the array using the last point
-                    self.coalescedPoints = [point1, point2, point3]
+                    self.points = [point1, point2, point3]
                 }
                     
             case .bezLine:
@@ -441,9 +438,9 @@ class PaintingView: MTKView {
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
-                let lastPoint = self.coalescedPoints.last!
+                let lastPoint = self.points.last!
                 // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
+                self.points = [lastPoint]
      
             case .SadunSmoothing:
                     
@@ -463,11 +460,11 @@ class PaintingView: MTKView {
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
-                if self.coalescedPoints.count >= NControlPoints.SadunSmoothing {
+                if self.points.count >= NControlPoints.SadunSmoothing {
                     
-                    let lastPoint = self.coalescedPoints.last!
+                    let lastPoint = self.points.last!
                     // remake the array using the last point
-                    self.coalescedPoints = [lastPoint]
+                    self.points = [lastPoint]
                 }
                     
             case .hermite:
@@ -482,11 +479,11 @@ class PaintingView: MTKView {
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
-                if self.coalescedPoints.count >= NControlPoints.hermite {
+                if self.points.count >= NControlPoints.hermite {
                     
-                    let lastPoint = self.coalescedPoints.last!
+                    let lastPoint = self.points.last!
                     // remake the array using the last point
-                    self.coalescedPoints = [lastPoint]
+                    self.points = [lastPoint]
                 }
             }
 
@@ -502,14 +499,14 @@ class PaintingView: MTKView {
         } else {
             
             // MARK: - No splining, just extract the CGPoints into whatever format is needed
-            pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
+            pointsFromPath = self.points.map { $0.f2 * 2.0 }
             
             //------------------
             // MARK: - Trim origial touch cache
             //------------------
-            let lastPoint = self.coalescedPoints.last!
+            let lastPoint = self.points.last!
             // remake the array using the last point
-            self.coalescedPoints = [lastPoint]
+            self.points = [lastPoint]
         }
             
             /**
@@ -604,7 +601,7 @@ class PaintingView: MTKView {
     // MARK: - BEGAN
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        coalescedPoints.removeAll(keepingCapacity: true)
+        points.removeAll(keepingCapacity: true)
         let bounds = self.bounds
         
         if useCoalescedTouches {
@@ -614,7 +611,7 @@ class PaintingView: MTKView {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
-                    coalescedPoints.append(location)
+                    points.append(location)
                 }
             }
             
@@ -623,7 +620,7 @@ class PaintingView: MTKView {
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                coalescedPoints.append(location)
+                points.append(location)
             }
         }
     }
@@ -640,7 +637,7 @@ class PaintingView: MTKView {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
-                    coalescedPoints.append(location)
+                    points.append(location)
                 }
             }
             
@@ -649,7 +646,7 @@ class PaintingView: MTKView {
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                coalescedPoints.append(location)
+                points.append(location)
             }
         }
         
@@ -660,15 +657,13 @@ class PaintingView: MTKView {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
-                    coalescedPoints.append(location)
+                    points.append(location)
                 }
             }
         }
 
         // MARK: - Render the stroke
-        self.renderLine(points: self.points,
-                        coalescedPoints: self.coalescedPoints,
-                        predictedPoints: self.predictedPoints)
+        self.renderLine(points: self.points)
     }
 
     // MARK: - ENDED
@@ -681,7 +676,7 @@ class PaintingView: MTKView {
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.preciseLocation(in: self)
                 location.y = bounds.size.height - location.y
-                coalescedPoints.append(location)
+                points.append(location)
             }
         }
 
