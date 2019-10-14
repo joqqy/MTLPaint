@@ -360,7 +360,7 @@ class PaintingView: MTKView {
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
-    private var splinePoints: Bool = true // :true
+    private var splinePoints: Bool = false // :true
     /// splining type
     private var eSpliningType: ESpliningType = .catmullRom
     
@@ -393,45 +393,81 @@ class PaintingView: MTKView {
         // local copy the global points
         let touchPoints = self.coalescedPoints
 
-        if splinePoints {
+        if self.splinePoints {
                 
             var strokePath: UIBezierPath? = UIBezierPath()
 
             switch (self.eSpliningType) {
                     
             case .catmullRom:
-                    
+                
+                //------------------
+                // MARK: - Spline
+                //------------------
                 strokePath = INTERP.interpolateCGPointsWithCatmullRom(
                     pointsAsNSValues: touchPoints,
                     closed: false,
                     alpha: 0.5)
+                
+                //------------------
+                // MARK: - Trim
+                //------------------
+                if self.coalescedPoints.count > 3 {
+                    let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
+                    let point2 = self.coalescedPoints[self.coalescedPoints.count - 2]
+                    let point3 = self.coalescedPoints.last!
+
+                    // remake the array using the last point
+                    self.coalescedPoints = [point1, point2, point3]
+                }
                     
             case .bezLine:
                     
+                //------------------
+                // MARK: - Spline
+                //------------------
                 if touchPoints.count >= 2 {
                     for i in 0 ..< touchPoints.count - 1 {
                         strokePath?.move(to: touchPoints[i]) // start point
                         strokePath?.addLine(to: touchPoints[i+1]) // end point
                     }
                 }
+                
+                //------------------
+                // MARK: - Trim
+                //------------------
+                let lastPoint = self.coalescedPoints.last!
+                // remake the array using the last point
+                self.coalescedPoints = [lastPoint]
      
             case .SadunSmoothing:
                     
+                //------------------
+                // MARK: - Spline
+                //------------------
                 for i in 0 ..< touchPoints.count-1 {
                     strokePath?.move(to: touchPoints[i]) // start point
                     strokePath?.addLine(to: touchPoints[i+1])
                 }
- 
                 // MARK: - Spline/Bezier/Smoothen the collected [CGPoint] array (Erica Sadun's version)
                 if smoothCurve {
                     /// smoothen
                     strokePath?.smoothened(granularity: 1) // smoothen test
                 }
+                
+                //------------------
+                // MARK: - Trim
+                //------------------
+                let lastPoint = self.coalescedPoints.last!
+                // remake the array using the last point
+                self.coalescedPoints = [lastPoint]
                     
             case .hermite:
                                
+                //------------------
+                // MARK: - Spline
+                //------------------
                 strokePath = INTERP.interpolateCGPointsWithHermite(points: touchPoints, closed: false)
-                    
                 /// - Remark: Flexmonkey version
                 //strokePath?.interpolatePointsWithHermite(interpolationPoints: touchPoints)
                     
@@ -439,6 +475,13 @@ class PaintingView: MTKView {
                 // MARK: - extract points from curve/spline
                 //--------------------------------------------------------------
                 pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+                
+                //------------------
+                // MARK: - Trim
+                //------------------
+                let lastPoint = self.coalescedPoints.last!
+                // remake the array using the last point
+                self.coalescedPoints = [lastPoint]
             }
 
             //--------------------------------------------------------------
@@ -451,6 +494,11 @@ class PaintingView: MTKView {
                 
         } else {
             pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
+            
+            //trim
+            let lastPoint = self.coalescedPoints.last!
+            // remake the array using the last point
+            self.coalescedPoints = [lastPoint]
         }
             
             /**
@@ -468,96 +516,7 @@ class PaintingView: MTKView {
 //            let simplifiedPoints = SwiftSimplify.simplify(self.coalescedPoints, tolerance: 1, highestQuality: hQ)
 //            // MARK: Smoothen
 //            let simplifiedPath: UIBezierPath = UIBezierPath.smoothFromPoints(simplifiedPoints)
-            
 
-        //--------------------------------------------------------------
-        // MARK: - trim original touch cache (control points)
-        //--------------------------------------------------------------
-        if !self.coalescedPoints.isEmpty {
-                
-            switch(self.eSpliningType) {
-                    
-            case .catmullRom:
-                    
-                if self.coalescedPoints.count > 3 {
-                    let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
-                    let point2 = self.coalescedPoints[self.coalescedPoints.count - 2]
-                    let point3 = self.coalescedPoints.last!
-                        
-                    // remake the array using the last point
-                    self.coalescedPoints = [point1, point2, point3]
-                }
-                    
-            case .bezLine:
-                let lastPoint = self.coalescedPoints.last!
-                // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
-                    
-            case .SadunSmoothing:
-                let lastPoint = self.coalescedPoints.last!
-                // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
-                    
-            case .hermite:
-                let lastPoint = self.coalescedPoints.last!
-                // remake the array using the last point
-                self.coalescedPoints = [lastPoint]
-                    
-            @unknown default:
-                fatalError()
-            }
-
-
-                
-        }
-//            if self.useCoalescedTouches {
-//
-//                if self.useCoalescedTouches {
-//
-//                    if !self.coalescedPoints.isEmpty {
-//                        let lastPoint = self.coalescedPoints.last!
-//                        // remake the array using the last point
-//                        self.coalescedPoints = [lastPoint]
-//                    }
-//
-//                } else {
-//                    if self.coalescedPoints.count > self.interpolation.rawValue {
-//                        self.coalescedPoints.removeFirst(self.interpolation.rawValue)
-//                    }
-//                }
-//
-////                if splinePoints {
-////                    if self.coalescedPoints.count > self.interpolation.rawValue {
-////                        // ... Store 4 last points
-////                        let p0 = self.coalescedPoints[self.coalescedPoints.count-4]
-////                        let p1 = self.coalescedPoints[self.coalescedPoints.count-3]
-////                        let p2 = self.coalescedPoints[self.coalescedPoints.count-2]
-////                        let p3 = self.coalescedPoints[self.coalescedPoints.count-1] // last point
-////
-////                        // remake the array using the last 4 points
-////                        self.coalescedPoints = [/*p0, p1, p2,*/ p3]
-////
-////                        print("left: \(self.coalescedPoints.count)")
-////                    }
-////
-////                } else {
-////                    if interpolateBetweenPoints {
-////                        let lastPoint = self.coalescedPoints.last!
-////                        // remake the array using the last 4 points
-////                        self.coalescedPoints = [lastPoint]
-////
-////                    } else {
-////                       self.coalescedPoints.removeAll() // This fixes the overlapping points, but how to interpolate properly?, but produces gaps if interpolating
-////                    }
-////                }
-//
-//            } else {
-//                if self.coalescedPoints.count > self.interpolation.rawValue {
-//                    self.coalescedPoints.removeFirst(self.interpolation.rawValue) // .removeFirst(3) worked! with splining and interpolate between points
-//                }
-//            }
-      
-        
         //--------------------------------------------------------------
         // MARK: - Linearly interpolate between extracted points (fill points between final points, if distance is greater than kBrushPixelStep)
         //--------------------------------------------------------------
