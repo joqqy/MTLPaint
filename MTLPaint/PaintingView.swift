@@ -64,7 +64,7 @@ enum ESpliningType {
 struct NControlPoints {
     
     static let bezLine = 1
-    static let thirdPartyCatmullRom = 3
+    static let catmullRom = 3
     static let SadunSmoothing = 3
     static let hermite = 3
 }
@@ -375,7 +375,7 @@ class PaintingView: MTKView {
             guard self.coalescedPoints.count > NControlPoints.bezLine else { return }
  
         case .catmullRom, .SadunSmoothing, .hermite:
-            guard self.coalescedPoints.count > NControlPoints.thirdPartyCatmullRom else { return }
+            guard self.coalescedPoints.count > NControlPoints.catmullRom else { return }
             
         @unknown default:
             break
