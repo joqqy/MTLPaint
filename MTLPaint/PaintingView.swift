@@ -360,9 +360,9 @@ class PaintingView: MTKView {
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
-    private var splinePoints: Bool = false // :true
+    private var splinePoints: Bool = true // :true
     /// splining type
-    private var eSpliningType: ESpliningType = .catmullRom
+    private var eSpliningType: ESpliningType = .hermite
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint],
@@ -410,7 +410,7 @@ class PaintingView: MTKView {
                     alpha: 0.5)
                 
                 //------------------
-                // MARK: - Trim
+                // MARK: - Trim origial touch cache
                 //------------------
                 if self.coalescedPoints.count > 3 {
                     let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
@@ -434,7 +434,7 @@ class PaintingView: MTKView {
                 }
                 
                 //------------------
-                // MARK: - Trim
+                // MARK: - Trim origial touch cache
                 //------------------
                 let lastPoint = self.coalescedPoints.last!
                 // remake the array using the last point
@@ -456,7 +456,7 @@ class PaintingView: MTKView {
                 }
                 
                 //------------------
-                // MARK: - Trim
+                // MARK: - Trim origial touch cache
                 //------------------
                 let lastPoint = self.coalescedPoints.last!
                 // remake the array using the last point
@@ -470,20 +470,16 @@ class PaintingView: MTKView {
                 strokePath = INTERP.interpolateCGPointsWithHermite(points: touchPoints, closed: false)
                 /// - Remark: Flexmonkey version
                 //strokePath?.interpolatePointsWithHermite(interpolationPoints: touchPoints)
-                    
-                //--------------------------------------------------------------
-                // MARK: - extract points from curve/spline
-                //--------------------------------------------------------------
-                pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
                 
                 //------------------
-                // MARK: - Trim
+                // MARK: - Trim origial touch cache
                 //------------------
                 let lastPoint = self.coalescedPoints.last!
                 // remake the array using the last point
                 self.coalescedPoints = [lastPoint]
             }
 
+            
             //--------------------------------------------------------------
             // MARK: - extract points from curve/spline
             //--------------------------------------------------------------
@@ -494,11 +490,11 @@ class PaintingView: MTKView {
                 
         } else {
             
-            // No splining
+            // MARK: - No splining
             pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
             
             //------------------
-            // MARK: - Trim
+            // MARK: - Trim origial touch cache
             //------------------
             let lastPoint = self.coalescedPoints.last!
             // remake the array using the last point
