@@ -404,17 +404,17 @@ class PaintingView: MTKView {
                     
             case .catmullRom:
                 
-                //------------------
+                //------------------------------------
                 // MARK: - Spline
-                //------------------
+                //------------------------------------
                 strokePath = INTERP.interpolateCGPointsWithCatmullRom(
                     pointsAsNSValues: touchPoints,
                     closed: false,
                     alpha: 0.5)
                 
-                //------------------
+                //------------------------------------
                 // MARK: - Trim origial touch cache
-                //------------------
+                //------------------------------------
                 if self.coalescedPoints.count >= NControlPoints.catmullRom {
                     
                     let point1 = self.coalescedPoints[self.coalescedPoints.count - 3]
@@ -427,9 +427,9 @@ class PaintingView: MTKView {
                     
             case .bezLine:
                     
-                //------------------
+                //------------------------------------
                 // MARK: - Spline
-                //------------------
+                //------------------------------------
                 if touchPoints.count >= NControlPoints.bezLine {
                     
                     for i in 0 ..< touchPoints.count - 1 {
@@ -438,18 +438,18 @@ class PaintingView: MTKView {
                     }
                 }
                 
-                //------------------
+                //------------------------------------
                 // MARK: - Trim origial touch cache
-                //------------------
+                //------------------------------------
                 let lastPoint = self.coalescedPoints.last!
                 // remake the array using the last point
                 self.coalescedPoints = [lastPoint]
      
             case .SadunSmoothing:
                     
-                //------------------
+                //------------------------------------
                 // MARK: - Spline
-                //------------------
+                //------------------------------------
                 for i in 0 ..< touchPoints.count-1 {
                     strokePath?.move(to: touchPoints[i]) // start point
                     strokePath?.addLine(to: touchPoints[i+1])
@@ -460,9 +460,9 @@ class PaintingView: MTKView {
                     strokePath?.smoothened(granularity: 1) // smoothen test
                 }
                 
-                //------------------
+                //------------------------------------
                 // MARK: - Trim origial touch cache
-                //------------------
+                //------------------------------------
                 if self.coalescedPoints.count >= NControlPoints.SadunSmoothing {
                     
                     let lastPoint = self.coalescedPoints.last!
@@ -472,16 +472,16 @@ class PaintingView: MTKView {
                     
             case .hermite:
                                
-                //------------------
+                //------------------------------------
                 // MARK: - Spline
-                //------------------
+                //------------------------------------
                 strokePath = INTERP.interpolateCGPointsWithHermite(points: touchPoints, closed: false)
                 /// - Remark: Flexmonkey version
                 //strokePath?.interpolatePointsWithHermite(interpolationPoints: touchPoints)
                 
-                //------------------
+                //------------------------------------
                 // MARK: - Trim origial touch cache
-                //------------------
+                //------------------------------------
                 if self.coalescedPoints.count >= NControlPoints.hermite {
                     
                     let lastPoint = self.coalescedPoints.last!
@@ -501,7 +501,7 @@ class PaintingView: MTKView {
                 
         } else {
             
-            // MARK: - No splining
+            // MARK: - No splining, just extract the CGPoints into whatever format is needed
             pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
             
             //------------------
