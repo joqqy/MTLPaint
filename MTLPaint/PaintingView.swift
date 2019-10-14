@@ -359,9 +359,9 @@ class PaintingView: MTKView {
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
-    private var splinePoints: Bool = true // :true
+    private var splinePoints: Bool = false // :true
     /// splining type
-    private var eSpliningType: ESpliningType = .catmullRom
+    private var eSpliningType: ESpliningType = .hermite
     
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint]) {
