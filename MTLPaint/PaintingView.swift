@@ -493,9 +493,13 @@ class PaintingView: MTKView {
                 
                 
         } else {
+            
+            // No splining
             pointsFromPath = self.coalescedPoints.map { $0.f2 * 2.0 }
             
-            //trim
+            //------------------
+            // MARK: - Trim
+            //------------------
             let lastPoint = self.coalescedPoints.last!
             // remake the array using the last point
             self.coalescedPoints = [lastPoint]
