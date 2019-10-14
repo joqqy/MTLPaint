@@ -129,7 +129,7 @@ class INTERP {
             return nil
         }
         
-        let nCurves: Int = (closed) ? points.count : points.count-1
+        let nCurves: Int = (closed) ? points.count : points.count - 1
         let path: UIBezierPath = UIBezierPath()
         
         for ii in 0 ..< nCurves {
@@ -142,7 +142,7 @@ class INTERP {
             var mx:CGFloat
             var my:CGFloat
             
-            //---------------------------------------------------
+            //--------------------------------------------------- move to
             curPt = points[ii]
             if (ii == 0) {
                 path.move(to: curPt)
@@ -161,10 +161,11 @@ class INTERP {
                 mx = (nextPt.x - curPt.x) * 0.5
                 my = (nextPt.y - curPt.y) * 0.5
             }
-            // control point 1
+            // MARK: - control point 1
             var ctrlPt1:CGPoint = CGPoint.zero
             ctrlPt1.x = curPt.x + mx / 3.0
             ctrlPt1.y = curPt.y + my / 3.0
+            
             
             //---------------------------------------------------
             curPt = points[nextii]
@@ -173,18 +174,19 @@ class INTERP {
             prevPt = points[previi]
             nextPt = points[nextii]
             if (closed || ii < nCurves-1) {
-                mx = (nextPt.x - curPt.x)*0.5 + (curPt.x - prevPt.x)*0.5
-                my = (nextPt.y - curPt.y)*0.5 + (curPt.y - prevPt.y)*0.5
+                mx = (nextPt.x - curPt.x) * 0.5 + (curPt.x - prevPt.x) * 0.5
+                my = (nextPt.y - curPt.y) * 0.5 + (curPt.y - prevPt.y) * 0.5
             } else {
                 mx = (curPt.x - prevPt.x)*0.5
                 my = (curPt.y - prevPt.y)*0.5
             }
-            // control point 2
+            // MARK: - control point 2
             var ctrlPt2: CGPoint = CGPoint.zero
             ctrlPt2.x = curPt.x - mx / 3.0
             ctrlPt2.y = curPt.y - my / 3.0
             
-            //---------------------------------------------------
+            
+            //--------------------------------------------------- add curve
             path.addCurve(
                 to: endPt,
                 controlPoint1: ctrlPt1,
@@ -284,31 +286,32 @@ extension UIBezierPath {
     func interpolatePointsWithHermite(interpolationPoints : [CGPoint], tau: CGFloat = 1.0/3.0) {
             
         guard !interpolationPoints.isEmpty else { return }
+        
+        //--------------------------------------------------------------- move to
         self.move(to: interpolationPoints[0])
-            
+        
+        
         let n = interpolationPoints.count - 1
-            
         for index in 0 ..< n {
             
             var mx: CGFloat
             var my: CGFloat
             
-            
-            
+            //---------------------------------------------------------------
             var currentPoint = interpolationPoints[index]
             var nextIndex = (index + 1) % interpolationPoints.count
             var prevIndex = index == 0 ? interpolationPoints.count - 1 : index - 1
             var previousPoint = interpolationPoints[prevIndex]
             var nextPoint = interpolationPoints[nextIndex]
+            
             let endPoint = nextPoint
                 
             if index > 0 {
-            mx = (nextPoint.x - previousPoint.x) / 2.0
-            my = (nextPoint.y - previousPoint.y) / 2.0
-            
+                mx = (nextPoint.x - previousPoint.x) * 0.5
+                my = (nextPoint.y - previousPoint.y) * 0.5
             } else {
-                mx = (nextPoint.x - currentPoint.x) / 2.0
-                my = (nextPoint.y - currentPoint.y) / 2.0
+                mx = (nextPoint.x - currentPoint.x) * 0.5
+                my = (nextPoint.y - currentPoint.y) * 0.5
             }
                     
             let controlPoint1 = CGPoint(x: currentPoint.x + mx * tau,
@@ -316,7 +319,7 @@ extension UIBezierPath {
             
             
             
-            
+            //---------------------------------------------------------------
             currentPoint = interpolationPoints[nextIndex]
             nextIndex = (nextIndex + 1) % interpolationPoints.count
             prevIndex = index
@@ -324,17 +327,19 @@ extension UIBezierPath {
             nextPoint = interpolationPoints[nextIndex]
                     
             if index < n - 1 {
-                mx = (nextPoint.x - previousPoint.x) / 2.0
-                my = (nextPoint.y - previousPoint.y) / 2.0
-                
+                mx = (nextPoint.x - previousPoint.x) * 0.5
+                my = (nextPoint.y - previousPoint.y) * 0.5
             } else {
-                mx = (currentPoint.x - previousPoint.x) / 2.0
-                my = (currentPoint.y - previousPoint.y) / 2.0
+                mx = (currentPoint.x - previousPoint.x) * 0.5
+                my = (currentPoint.y - previousPoint.y) * 0.5
             }
                     
             let controlPoint2 = CGPoint(x: currentPoint.x - mx * tau,
                                         y: currentPoint.y - my * tau)
                     
+            
+            
+            //--------------------------------------------------------------- add curve
             self.addCurve(to: endPoint,
                           controlPoint1: controlPoint1,
                           controlPoint2: controlPoint2)
