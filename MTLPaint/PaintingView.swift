@@ -409,7 +409,7 @@ class PaintingView: MTKView {
                     pointsAsNSValues: touchPoints,
                     closed: false,
                     alpha: 0.5)
-                
+                //
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
@@ -431,8 +431,6 @@ class PaintingView: MTKView {
                      segment 1:   p0          p1---------p2             p3
                      segment 2:                 p0             p1---------p2            p3
                      and so on . . .
-                     
-                     
                      */
                     
                     let point1 = self.points[self.points.count - 3]
