@@ -340,7 +340,7 @@ class PaintingView: MTKView {
         
     }
 
-        // Opaque dots
+    // Opaque dots
 //    let kBrushOpacity = (1.0 / 1.0)
 //    let kBrushPixelStep = 20.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
 //    let kBrushScale = 20.0
