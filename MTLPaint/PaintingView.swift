@@ -346,7 +346,7 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
         
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 50.0)
+    let kBrushOpacity = (1.0 / 80.0)
     let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
     let kBrushScale = 1.0 * 0.5
     
