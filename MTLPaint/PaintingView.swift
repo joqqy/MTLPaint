@@ -363,6 +363,7 @@ class PaintingView: MTKView {
     /// splining type
     private var eSpliningType: ESpliningType = .hermite
     
+    
     // MARK: - Draws a line onscreen based on where the user touches
     private func renderLine(points: [CGPoint]) {
         
