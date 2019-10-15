@@ -621,25 +621,23 @@ class PaintingView: MTKView {
     // MARK: ref: code.tutsplus.com/tutorials/smooth-freehand-drawing-on-ios--mobile-13164
     // - Remark: as of now, calling this for every newly added point is slow compared to our scheme
     private func midPoint() {
-            
-        // MARK: - Allocate vertex array buffer for GPU
-        var pointsFromPath: [SIMD2<Float>] = []
                 
         //--------------------------------------------------------------
         // MARK: - Guard check the [CGPoint] array collected from touch
         //--------------------------------------------------------------
         guard self.ctr == 4 else { return }
         
-        let strokePath: UIBezierPath? = UIBezierPath()
-        
         //-----------------------------------------------------------------
         /// Move the endpoint to the middle of the line jointing the second control point of the firstBezier segment and the first control point of the second Bezier segment
-        self.points[3] = CGPoint(x: (self.points[2].x + self.points[4].x)/2.0,
-                                 y: (self.points[2].y + self.points[4].y)/2.0)
+        let strokePath: UIBezierPath? = UIBezierPath()
+        self.points[3] = CGPoint(x: (self.points[2].x + self.points[4].x) * 0.5,
+                                 y: (self.points[2].y + self.points[4].y) * 0.5)
         
         strokePath?.move(to: self.points[0])
         /// add a cubic bezier from 0 to 3 with control points 1 and 2
-        strokePath?.addCurve(to: self.points[3], controlPoint1: self.points[1], controlPoint2: self.points[2])
+        strokePath?.addCurve(to: self.points[3],
+                             controlPoint1: self.points[1],
+                             controlPoint2: self.points[2])
         
         /// replace points and get ready to handle the next segment
         self.points[0] = self.points[3]
@@ -649,13 +647,16 @@ class PaintingView: MTKView {
         //-----------------------------------------------------------------
         
         
+        // MARK: - Allocate vertex array buffer for GPU
+        var pointsFromPath: [SIMD2<Float>] = []
         //--------------------------------------------------------------
         // MARK: - extract points from curve/spline
         //--------------------------------------------------------------
         if let strokePath = strokePath {
             pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
         }
-                
+           
+        
         //--------------------------------------------------------------
         // MARK: - Linearly interpolate between extracted points (fill points between final points, if distance is greater than kBrushPixelStep)
         //--------------------------------------------------------------
