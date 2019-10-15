@@ -402,6 +402,7 @@ class PaintingView: MTKView {
                     
             case .catmullRom:
                 
+                
                 //------------------------------------
                 // MARK: - Spline
                 //------------------------------------
