@@ -355,15 +355,15 @@ class PaintingView: MTKView {
     /// interpolate between final points
     private var interpolateBetweenPoints: Bool = true // :true
     /// use coalesced
-    private var useCoalescedTouches: Bool = false // :true
+    private var useCoalescedTouches: Bool = true // :true
         var ctr: Int = 0
-        let midpointLine: Bool = true
+        let midpointLine: Bool = false
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
     private var splinePoints: Bool = false // :true
     /// splining type
-    private var eSpliningType: ESpliningType = .hermite
+    private var eSpliningType: ESpliningType = .catmullRom
     
     
     // MARK: - Draws a line onscreen based on where the user touches
@@ -731,7 +731,7 @@ class PaintingView: MTKView {
     // MARK: - BEGAN
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        if !self.midpointLine && !self.useCoalescedTouches {
+        if !self.midpointLine && self.useCoalescedTouches {
             points.removeAll(keepingCapacity: true)
         } else {
             self.points = Array(repeating: CGPoint(), count: 5)
@@ -835,6 +835,7 @@ class PaintingView: MTKView {
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
                     points.append(location)
+                    self.renderLine(points: self.points)
                 }
             }
         } else {
