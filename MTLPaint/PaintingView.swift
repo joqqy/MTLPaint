@@ -346,16 +346,18 @@ class PaintingView: MTKView {
 //    let kBrushScale = 20.0
         
     // bigger transparent brush
-    let kBrushOpacity = (1.0 / 80.0)
+    let kBrushOpacity = (1.0 / 25.0)
     let kBrushPixelStep = 1.0 // :n amount of pixels between any two points, 1 means 1 pixel between points
-    let kBrushScale = 1.0 * 0.5
+    let kBrushScale = 2.0
     
     // MARK: - CONSTANTS:
     
     /// interpolate between final points
     private var interpolateBetweenPoints: Bool = true // :true
     /// use coalesced
-    private var useCoalescedTouches: Bool = true // :true
+    private var useCoalescedTouches: Bool = false // :true
+        var ctr: Int = 0
+        let midpointLine: Bool = true
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
@@ -400,7 +402,7 @@ class PaintingView: MTKView {
 
             switch (self.eSpliningType) {
                     
-            case .catmullRom:                
+            case .catmullRom:
                 
                 //------------------------------------
                 // MARK: - Spline
@@ -430,7 +432,7 @@ class PaintingView: MTKView {
                      Catmull-Rom  (the tangents lie on p1 and p2)
                      segment 1:   p0          p1---------p2             p3
                      segment 2:                 p0             p1---------p2            p3
-                     and so on . . .
+                     and so on . . .                     
                      */
                     
                     let point1 = self.points[self.points.count - 3]
@@ -616,15 +618,133 @@ class PaintingView: MTKView {
         }
     }
     
+    // MARK: ref: code.tutsplus.com/tutorials/smooth-freehand-drawing-on-ios--mobile-13164
+    // - Remark: as of now, calling this for every newly added point is slow compared to our scheme
+    private func midPoint() {
+            
+        // MARK: - Allocate vertex array buffer for GPU
+        var pointsFromPath: [SIMD2<Float>] = []
+                
+        //--------------------------------------------------------------
+        // MARK: - Guard check the [CGPoint] array collected from touch
+        //--------------------------------------------------------------
+        guard self.ctr == 4 else { return }
+        
+        let strokePath: UIBezierPath? = UIBezierPath()
+        
+        //-----------------------------------------------------------------
+        /// Move the endpoint to the middle of the line jointing the second control point of the firstBezier segment and the first control point of the second Bezier segment
+        self.points[3] = CGPoint(x: (self.points[2].x + self.points[4].x)/2.0,
+                                 y: (self.points[2].y + self.points[4].y)/2.0)
+        
+        strokePath?.move(to: self.points[0])
+        /// add a cubic bezier from 0 to 3 with control points 1 and 2
+        strokePath?.addCurve(to: self.points[3], controlPoint1: self.points[1], controlPoint2: self.points[2])
+        
+        /// replace points and get ready to handle the next segment
+        self.points[0] = self.points[3]
+        self.points[1] = self.points[4]
+        
+        self.ctr = 1
+        //-----------------------------------------------------------------
+        
+        
+        //--------------------------------------------------------------
+        // MARK: - extract points from curve/spline
+        //--------------------------------------------------------------
+        if let strokePath = strokePath {
+            pointsFromPath = self.extractPoints_fromUIBezierPath_f2(strokePath)!
+        }
+                
+        //--------------------------------------------------------------
+        // MARK: - Linearly interpolate between extracted points (fill points between final points, if distance is greater than kBrushPixelStep)
+        //--------------------------------------------------------------
+        var newCount: Int = 0
+        if interpolateBetweenPoints {
+
+            var coalescedInterpolated: [SIMD2<Float>] = []
+                
+            for i in 0 ..< pointsFromPath.count-1 {
+                    
+                // MARK: - get the pair of points to interpolate between
+                let p0: SIMD2<Float> = pointsFromPath[i]
+                let p1: SIMD2<Float> = pointsFromPath[i+1]
+                    
+                // MARK: - How many point do we need to distribute between each pair of points to satisfy the option to get n xpixes between each point
+                let spacingCount = max(Int(ceilf(sqrtf((p1[0] - p0[0]) * (p1[0] - p0[0]) +
+                                                       (p1[1] - p0[1]) * (p1[1] - p0[1])) / kBrushPixelStep.f)), 1)
+                    
+                //self.lastdistance = spacingCount
+                    
+                // MARK: - calculate position shift between the two points and append to the array
+                for n in 0 ..< spacingCount {
+                    coalescedInterpolated.append(p0 + (p1 - p0) * (n.f / spacingCount.f))
+                }
+            }
+                
+            /// Get the count of the array for the final points
+            newCount = coalescedInterpolated.count
+            //debug
+            print("newCount: \(newCount)")
+            // MARK: - Create the mtlbuffer
+            if newCount > 0 {
+                self.vertBuffer = metalDevice.makeBuffer(bytes: &coalescedInterpolated, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+            }
+                
+        } else {
+                
+            /// Get the count of the array for the final points
+            newCount = pointsFromPath.count
+            //debug
+            print("newCount: \(newCount)")
+            // MARK: - Create the mtlbuffer
+            if newCount > 0 {
+                self.vertBuffer = metalDevice.makeBuffer(bytes: &pointsFromPath, length: MemoryLayout<SIMD2<Float>>.stride * newCount, options: [])
+            }
+        }
+            
+        drawInNextDrawable(loadAction: .load) { encoder in
+
+            // MARK: - Draw
+
+            encoder.setRenderPipelineState(program[PROGRAM_POINT].pipelineState)
+                
+            /// Bind vertex buffers
+            //encoder.setVertexBytes(vertexBuffer, length: _points.count * 2 * MemoryLayout<Float>.size, index: 0)
+            encoder.setVertexBuffer(vertBuffer, offset: 0, index: 0)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_MVP], offset: 0, index: 1)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_POINT_SIZE], offset: 0, index: 2)
+            encoder.setVertexBuffer(program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR], offset: 0, index: 3)
+                
+            /// Bind fragment buffers
+            encoder.setFragmentTexture(brushTexture.texture, index: 0)
+            encoder.setFragmentSamplerState(brushTexture.sampler, index: 0)
+                
+            /// Set viewport
+            encoder.setViewport(viewport)
+                
+            /// Drawcall
+            encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
+        }
+    }
+    
     // MARK: - BEGAN
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        points.removeAll(keepingCapacity: true)
+        if !self.midpointLine && !self.useCoalescedTouches {
+            points.removeAll(keepingCapacity: true)
+        } else {
+            self.points = Array(repeating: CGPoint(), count: 5)
+        }
+        
         let bounds = self.bounds
+        
+        self.ctr = 0
         
         if useCoalescedTouches {
             
             if let coalesced = event?.coalescedTouches(for: touches.first!) {
+                
                 for touch in coalesced {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
@@ -635,23 +755,31 @@ class PaintingView: MTKView {
             
         } else {
             if let touch: UITouch = touches.first {
+                
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                points.append(location)
+                
+                 if !self.midpointLine {
+                     points.append(location)
+                 } else {
+                    self.points[0] = location
+                 }
             }
         }
     }
     
     // MARK: - MOVED
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-     
-        
+                    
         let bounds: CGRect = self.bounds
         
-       if useCoalescedTouches {
+        if useCoalescedTouches {
+        
             if let coalesced = event?.coalescedTouches(for: touches.first!) {
+                
                 for touch in coalesced {
+                    
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                     var location = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
@@ -660,11 +788,20 @@ class PaintingView: MTKView {
             }
             
         } else {
+            
             if let touch: UITouch = touches.first {
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
                 var location = touch.location(in: self)
                 location.y = bounds.size.height - location.y
-                points.append(location)
+                
+                if !self.midpointLine {
+                    points.append(location)
+                                       
+                } else {
+                    self.ctr += 1
+                    self.points[ctr] = location
+                    self.midPoint()
+                }
             }
         }
         
@@ -680,24 +817,29 @@ class PaintingView: MTKView {
             }
         }
 
-        // MARK: - Render the stroke
-        self.renderLine(points: self.points)
+        if !self.midpointLine {
+            // MARK: - Render the stroke
+            self.renderLine(points: self.points)
+        }
     }
 
     // MARK: - ENDED
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        if let coalesced = event?.coalescedTouches(for: touches.first!) {
-            
-            for touch in coalesced {
+        if !self.midpointLine {
+            if let coalesced = event?.coalescedTouches(for: touches.first!) {
                 
-                // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                var location = touch.preciseLocation(in: self)
-                location.y = bounds.size.height - location.y
-                points.append(location)
+                for touch in coalesced {
+                    
+                    // Convert touch point from UIView referential to OpenGL one (upside-down flip)
+                    var location = touch.preciseLocation(in: self)
+                    location.y = bounds.size.height - location.y
+                    points.append(location)
+                }
             }
+        } else {
+            self.ctr = 0
         }
-
     }
 
     // MARK: - CANCELLED
