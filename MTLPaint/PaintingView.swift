@@ -400,8 +400,7 @@ class PaintingView: MTKView {
 
             switch (self.eSpliningType) {
                     
-            case .catmullRom:
-                
+            case .catmullRom:                
                 
                 //------------------------------------
                 // MARK: - Spline
