@@ -417,15 +417,22 @@ class PaintingView: MTKView {
                     
                     /**
                      Note that the difference between hermite and catmull-rom is that with hermite, we have to explicityly supply the tangents to p0 and p1 (start and end point resp.)
+                     The last point is shared for each new segment
+                        
+                     Hermite  (the tangents lie on p0 and p1)
+                     segment 1:  p0---------p1
+                     segment 2:                  p0---------p1
                      
                      With catmull-rom, we need 4 points (p0, p1, p2 and p3) But we do not need to explicitly supply any tangent. The formula creates a segment between p1 and p3,
-                     and calculates the two tangents automaticallyusing p0 and p2 and p1 and p3 respectively
+                     and calculates the two tangents automaticallyusing p0 and p2 and p1 and p3 respectively.
+                     So you see, for each new segment, we need the previous 3 points, ie. last 3 points are shared for each new segment
                      
+                     Catmull-Rom  (the tangents lie on p1 and p2)
                      segment 1:   p0          p1---------p2             p3
                      segment 2:                 p0             p1---------p2            p3
                      and so on . . .
                      
-                     So you see, for each new segment, we need the previous 3 points, and the above explains why
+                     
                      */
                     
                     let point1 = self.points[self.points.count - 3]
