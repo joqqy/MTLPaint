@@ -409,7 +409,7 @@ class PaintingView: MTKView {
                     pointsAsNSValues: touchPoints,
                     closed: false,
                     alpha: 0.5)
-                //
+                
                 //------------------------------------
                 // MARK: - Trim origial touch cache
                 //------------------------------------
