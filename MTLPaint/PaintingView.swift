@@ -400,7 +400,7 @@ class PaintingView: MTKView {
 
             switch (self.eSpliningType) {
                     
-            case .catmullRom:                
+            case .catmullRom:
                 
                 //------------------------------------
                 // MARK: - Spline
@@ -430,9 +430,7 @@ class PaintingView: MTKView {
                      Catmull-Rom  (the tangents lie on p1 and p2)
                      segment 1:   p0          p1---------p2             p3
                      segment 2:                 p0             p1---------p2            p3
-                     and so on . . .
-                     
-                     
+                     and so on . . .                     
                      */
                     
                     let point1 = self.points[self.points.count - 3]
