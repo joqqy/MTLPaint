@@ -125,6 +125,7 @@ class PaintingViewController: UIViewController {
 
     // Called when receiving the "shake" notification; plays the erase sound and redraws the view
     @objc func eraseView() {
+        
         if CFAbsoluteTimeGetCurrent() > lastTime + kMinEraseInterval {
             erasingSound.play()
             (self.view as! PaintingView).erase()

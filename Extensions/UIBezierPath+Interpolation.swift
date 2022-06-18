@@ -318,7 +318,6 @@ extension UIBezierPath {
                                         y: currentPoint.y + my * tau)
             
             
-            
             //---------------------------------------------------------------
             currentPoint = interpolationPoints[nextIndex]
             nextIndex = (nextIndex + 1) % interpolationPoints.count
@@ -336,7 +335,6 @@ extension UIBezierPath {
                     
             let controlPoint2 = CGPoint(x: currentPoint.x - mx * tau,
                                         y: currentPoint.y - my * tau)
-                    
             
             
             //--------------------------------------------------------------- add curve

@@ -357,7 +357,7 @@ class PaintingView: MTKView {
     /// use coalesced
     private var useCoalescedTouches: Bool = true // :true
         var ctr: Int = 0
-        let midpointLine: Bool = false
+        let midpointLine: Bool = false // :false
     /// use predicted
     private var usePredictedTouches: Bool = false // :false
     /// spline
@@ -627,7 +627,7 @@ class PaintingView: MTKView {
         //--------------------------------------------------------------
         guard self.ctr == 4 else { return }
         
-        //-----------------------------------------------------------------
+        //----------------------------------------------------------------- Spline the points
         /// Move the endpoint to the middle of the line jointing the second control point of the firstBezier segment and the first control point of the second Bezier segment
         let strokePath: UIBezierPath? = UIBezierPath()
         self.points[3] = CGPoint(x: (self.points[2].x + self.points[4].x) * 0.5,
@@ -724,7 +724,7 @@ class PaintingView: MTKView {
             /// Set viewport
             encoder.setViewport(viewport)
                 
-            /// Drawcall
+            // Drawcall
             encoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: newCount)
         }
     }
@@ -732,33 +732,33 @@ class PaintingView: MTKView {
     // MARK: - BEGAN
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        if !self.midpointLine && self.useCoalescedTouches {
+        if !self.midpointLine/* :false*/ && self.useCoalescedTouches/* : true*/ {
             points.removeAll(keepingCapacity: true)
         } else {
+            self.ctr = 0
             self.points = Array(repeating: CGPoint(), count: 5)
         }
         
         let bounds = self.bounds
         
-        self.ctr = 0
-        
-        if useCoalescedTouches {
+        if useCoalescedTouches/* : true*/ {
             
-            if let coalesced = event?.coalescedTouches(for: touches.first!) {
+            if let coalesced: [UITouch] = event?.coalescedTouches(for: touches.first!) {
                 
                 for touch in coalesced {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                    var location = touch.preciseLocation(in: self)
+                    var location: CGPoint = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
                     points.append(location)
                 }
             }
             
         } else {
+            
             if let touch: UITouch = touches.first {
                 
                 // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                var location = touch.location(in: self)
+                var location: CGPoint = touch.location(in: self)
                 location.y = bounds.size.height - location.y
                 
                  if !self.midpointLine {
@@ -806,8 +806,8 @@ class PaintingView: MTKView {
             }
         }
         
-        // MARK: - Predicted touches
-        if usePredictedTouches {
+        // MARK: Predicted touches
+        if usePredictedTouches { // :false
            if let coalesced = event?.predictedTouches(for: touches.first!) {
                 for touch in coalesced {
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
@@ -827,13 +827,14 @@ class PaintingView: MTKView {
     // MARK: - ENDED
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        if !self.midpointLine {
+        if !self.midpointLine/* :false*/ {
+            
             if let coalesced = event?.coalescedTouches(for: touches.first!) {
                 
                 for touch in coalesced {
                     
                     // Convert touch point from UIView referential to OpenGL one (upside-down flip)
-                    var location = touch.preciseLocation(in: self)
+                    var location: CGPoint = touch.preciseLocation(in: self)
                     location.y = bounds.size.height - location.y
                     points.append(location)
                     self.renderLine(points: self.points)
@@ -846,16 +847,17 @@ class PaintingView: MTKView {
 
     // MARK: - CANCELLED
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
     }
     
     
-    // Erases the screen
+    /// Erases the screen
     func erase() {
         drawInNextDrawable{_ in
             //Nothing more...
         }
     }
+    
+    /// Sets the color of the brush
     func setBrushColor(red: CGFloat, green: CGFloat, blue: CGFloat) {
         
         // Update the brush color
@@ -869,6 +871,7 @@ class PaintingView: MTKView {
             program[PROGRAM_POINT].uniform[UNIFORM_VERTEX_COLOR] = uniformVertexColor
         }
     }
+    
     private func createRenderTargetTexture(from texture: MTLTexture) -> MTLTexture {
         
         let textureDescriptor = MTLTextureDescriptor()
@@ -882,6 +885,7 @@ class PaintingView: MTKView {
         let sampleTexture = metalDevice.makeTexture(descriptor: textureDescriptor)
         return sampleTexture!
     }
+    
     override var canBecomeFirstResponder : Bool {
         return true
     }
